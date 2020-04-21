@@ -34,8 +34,8 @@ void s_CheckStoredTrisInCell(
     EXPECT_EQ(tris.size(), expectedCount);
 }
 
-//#define FS_AVATARS_TEST_GRID_PRINT_OUT
-#ifdef FS_AVATARS_TEST_GRID_PRINT_OUT 
+// #define CTRIGRID_TEST_GRID_PRINT_OUT
+#ifdef CTRIGRID_TEST_GRID_PRINT_OUT 
 static
 void s_PrintGridZSlice(
     const ctrigrid::ClosestTriUniformGrid &grid, 
@@ -382,7 +382,7 @@ TEST(ClosestTriUniformGridUnitTests, UniformGridTriSpatialMapFinalize)
 
     // check stored tris
     {
-#ifdef FS_AVATARS_TEST_GRID_PRINT_OUT
+#ifdef CTRIGRID_TEST_GRID_PRINT_OUT
         // XXX print for testing
         s_PrintGridZSlice(grid, 0u);
         s_PrintGridZSlice(grid, 1u);
