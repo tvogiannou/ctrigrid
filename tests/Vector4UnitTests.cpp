@@ -1,4 +1,3 @@
-// Copyright (C) 2019 Facesoft Ltd - All Rights Reserved
 
 #include <gtest/gtest.h>
 
