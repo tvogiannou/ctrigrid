@@ -8,6 +8,16 @@ option (CTRIGRID_GENERATE_BENCHMARKS "Generate benchmarks" OFF)
 
 set(CTRIGRID_EXTERNAL_DEPENDENCIES_LOCATION "${PROJECT_SOURCE_DIR}/external")
 
+if(CTRIGRID_GENERATE_BENCHMARKS)
+    message("Adding Google Benchmark...")
+    set(BENCHMARK_ENABLE_TESTING OFF CACHE BOOL "" FORCE)
+    set(BENCHMARK_ENABLE_INSTALL OFF CACHE BOOL "" FORCE)
+    set(BENCHMARK_ENABLE_GTEST_TESTS OFF CACHE BOOL "" FORCE)
+    add_subdirectory(	"${CTRIGRID_EXTERNAL_DEPENDENCIES_LOCATION}/benchmark-1.5.0" 
+                        ${CMAKE_CURRENT_BINARY_DIR}/benchmark-build
+                        EXCLUDE_FROM_ALL)
+endif(CTRIGRID_GENERATE_BENCHMARKS)
+
 # compiler settings
 set(CMAKE_CXX_STANDARD 11)
 if(MSVC)
@@ -56,15 +66,7 @@ if(CTRIGRID_GENERATE_TESTS)
 endif(CTRIGRID_GENERATE_TESTS)
 
 if(CTRIGRID_GENERATE_BENCHMARKS)
-    message("Adding Google Benchmark...")
-    set(BENCHMARK_ENABLE_TESTING OFF CACHE BOOL "" FORCE)
-    set(BENCHMARK_ENABLE_INSTALL OFF CACHE BOOL "" FORCE)
-    set(BENCHMARK_ENABLE_GTEST_TESTS OFF CACHE BOOL "" FORCE)
-    add_subdirectory(	"${CTRIGRID_EXTERNAL_DEPENDENCIES_LOCATION}/benchmark-1.5.0" 
-                        ${CMAKE_CURRENT_BINARY_DIR}/benchmark-build
-                        EXCLUDE_FROM_ALL)
-    
-                        file(GLOB CTRIGRID_BENCHMARK_FILES "${CMAKE_CURRENT_LIST_DIR}/benchmarks/*.cpp" "${CMAKE_CURRENT_LIST_DIR}/benchmarks/*.h")
-                        add_executable(ctrigrid.Benchmarks ${CTRIGRID_BENCHMARK_FILES})
-                        target_link_libraries(ctrigrid.Benchmarks ctrigrid benchmark benchmark_main)
+    file(GLOB CTRIGRID_BENCHMARK_FILES "${CMAKE_CURRENT_LIST_DIR}/benchmarks/*.cpp" "${CMAKE_CURRENT_LIST_DIR}/benchmarks/*.h")
+    add_executable(ctrigrid.Benchmarks ${CTRIGRID_BENCHMARK_FILES})
+    target_link_libraries(ctrigrid.Benchmarks ctrigrid benchmark benchmark_main)
 endif(CTRIGRID_GENERATE_BENCHMARKS)
