@@ -77,6 +77,8 @@ cmake --build .
 ./ctrigrid.Benchmarks
 ```
 
+> Benchmarks only work for x64 builds. On Windows, the Win64 generator needs to be passed explicitly to cmake, e.g. for VS 2017 add `-G"Visual Studio 15 Win64"` tp the cmake command line, since the default is to use Win32. 
+
 ### Usage
 
 ```cpp
@@ -135,15 +137,15 @@ To reduce the memory footprint of the grid, the triangle indices for each cell a
 This approach adds some time during the distance query, due to the index decompression cost, but it dramatically reduces the memory requirements of the grid. 
 
 ### FAQ
-**How to determine the parameters of the grid (Nx/Ny/Nz, cell width, etc)?**
+**How to determine the parameters of the grid (Nx/Ny/Nz, cell width, etc)?**  
 The parameters of the grid should be such so that the grid fully encloses the mesh **plus the volume that the query points are expected to lie on** (see also next question).
 In terms of performance, the smaller the cells the less likely are to be nearing many triangles, so the [distance query](#point-distance-query) should be faster (due to less triangles to iterate on). This however comes at the cost of having to use larger Nx/Ny/Nz values in order to enclose the entire mesh, which results in grid with a larger memory footprint. The trade-off here being between memory and runtime performance, however note that grids large enough can also incur performance costs due to main memory and/or cache access patterns. 
 
-**What happens if the point in the query is not inside the grid?**
+**What happens if the point in the query is not inside the grid?**  
 By default, the query returns false and the input is not modified. This can be modified by passing `forceInGrid = false` to the query which will result in approximating the result by finding the closest cell (instead of the enclosing cell). This is not always accurate but for large enough grids it is very close (if not identical) to the correct result.
 
-**When should I enable/disable the SSE implementation?**
+**When should I enable/disable the SSE implementation?**  
 The SSE implementations take 20-40% less computational time on average (single threaded, Core i7), however they incur some loss of accuracy (up to ~3 decimal points). 
 
-**Can I save the grid in disk?**
+**Can I save the grid in disk?**  
 There is no built-in serialization for the grid data, even though technically it should not be too involved to implement.
