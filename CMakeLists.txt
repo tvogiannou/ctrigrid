@@ -4,6 +4,7 @@ project(ctrigrid)
 
 option (CTRIGRID_GENERATE_TESTS "Generate unit tests" OFF)
 option (CTRIGRID_GENERATE_BENCHMARKS "Generate benchmarks" OFF)
+option (CTRIGRID_GENERATE_PYTHON_BINDINGS "Generate target for python bindings" OFF)
 
 
 set(CTRIGRID_EXTERNAL_DEPENDENCIES_LOCATION "${PROJECT_SOURCE_DIR}/external")
@@ -25,6 +26,10 @@ if(MSVC)
 endif(MSVC)
 if(UNIX)
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -Werror -fno-rtti")
+
+    if(CTRIGRID_GENERATE_PYTHON_BINDINGS)
+        set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -frtti -ldl -lpthread -fpic")   # rtti for pybind11
+    endif()
 endif(UNIX)
 
 
@@ -70,3 +75,16 @@ if(CTRIGRID_GENERATE_BENCHMARKS)
     add_executable(ctrigrid.Benchmarks ${CTRIGRID_BENCHMARK_FILES})
     target_link_libraries(ctrigrid.Benchmarks ctrigrid benchmark benchmark_main)
 endif(CTRIGRID_GENERATE_BENCHMARKS)
+
+if (CTRIGRID_GENERATE_PYTHON_BINDINGS)
+    add_subdirectory(${CTRIGRID_EXTERNAL_DEPENDENCIES_LOCATION}/pybind11  ${CMAKE_CURRENT_BINARY_DIR}/pybind11-build)
+
+    # create pybind11 module
+    pybind11_add_module(ctrigrid_bindings 
+                        ${CMAKE_CURRENT_LIST_DIR}/python/module.cpp
+                        ${CMAKE_CURRENT_LIST_DIR}/python/queries_bindings.cpp
+                        ${CMAKE_CURRENT_LIST_DIR}/python/mesh_bindings.cpp
+                        ${CMAKE_CURRENT_LIST_DIR}/python/module.h)
+    target_include_directories(ctrigrid_bindings PRIVATE ${CTRIGRID_EXTERNAL_DEPENDENCIES_LOCATION}/tiny_obj_loader)
+    target_link_libraries(ctrigrid_bindings PRIVATE ctrigrid)
+endif(CTRIGRID_GENERATE_PYTHON_BINDINGS)
