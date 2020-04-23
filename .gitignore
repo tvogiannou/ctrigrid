@@ -1,6 +1,9 @@
 # local files
 **/build
 
+# python cache
+**/__pycache__
+
 # Prerequisites
 *.d
 
