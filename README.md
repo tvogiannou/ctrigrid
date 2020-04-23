@@ -30,7 +30,7 @@ The algorithm employs a [regular grid](https://en.wikipedia.org/wiki/Regular_gri
 
 ### Build Instructions
 
-The code has been tested with the following compilersgit
+The code has been tested with the following compilers
 - Visual Studio 2017
 - GCC 5.4.0
 - Clang 6.0.1
