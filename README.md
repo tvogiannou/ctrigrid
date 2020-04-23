@@ -14,6 +14,7 @@ Closest Triangle (Regular) Grid
       - [Generating the tests](#generating-the-tests)
       - [Generating the benchmarks](#generating-the-benchmarks)
   - [Usage](#usage)
+    - [Python Bindings](#python-bindings)
   - [Details](#details)
     - [Point Distance Query](#point-distance-query)
     - [Grid Generation](#grid-generation)
@@ -106,6 +107,37 @@ citrgrid::Vector3 testPoint = ...                       // some test point
 citrgrid::Vector3 closestPoint;                         // the 3D position in the surface of the tri mesh that is closest to testPoint 
 citrgrid::ClosestTriUniformGrid::MapTriKeyType triKey;  // the index of the mesh triangle where the closestPoint lies on
 bool validResult = grid.FindClosestPointOnTris(testPoint, closestPoint, triKey);
+```
+
+#### Python Bindings
+A subset of the C++ API functionality is exposed in a python module found in the repo. 
+To generate and build the python bindings pass the following cmake option 
+```bash
+cd ctrigrid
+
+# pybind is integrated as a git submodule in the repo so it needs to be updated manually
+git submodule update --init
+
+mkdir build
+cd build
+cmake -DCTRIGRID_GENERATE_PYTHON_BINDINGS=1 ..
+```
+
+The built python module (as .so file) can then be imported in python source.
+```python
+# example code
+
+import ctrigrid_bindings # this needs to be copied in the local directory
+
+# create the grid
+origin = ctrigrid_bindings.vec3(-1.0, -1.0, -1.0)
+N = 16
+width = 1/8
+grid = ctrigrid_bindings.grid(N, N, N, width, origin)
+grid.add_tri_mesh(mesh_vertices, mesh_indices)
+
+# query closest point
+c = gen_random_points(1024, origin, N, width)
 ```
 
 ### Details
