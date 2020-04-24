@@ -1,6 +1,9 @@
 # local files
 **/build
 
+# vs code
+**/.vscode
+
 # python cache
 **/__pycache__
 
