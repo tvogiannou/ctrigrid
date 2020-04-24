@@ -96,7 +96,7 @@ TEST(ClosestTriUniformGridUnitTests, UniformGridTriSpatialMapIndexing)
         const ClosestTriUniformGrid::MapCellKeyType Ny = 8u;
         const ClosestTriUniformGrid::MapCellKeyType Nz = 4u;
 
-        ClosestTriUniformGrid::InitInfo info = { Nx, Ny, Nz, origin, cellWidth };
+        ClosestTriUniformGrid::StructureInfo info = { Nx, Ny, Nz, origin, cellWidth };
         bool r = grid.Init(info);
         EXPECT_TRUE(r);
 
@@ -135,7 +135,7 @@ TEST(ClosestTriUniformGridUnitTests, UniformGridTriSpatialMapIndexing)
         const ClosestTriUniformGrid::MapCellKeyType Ny = 7u;
         const ClosestTriUniformGrid::MapCellKeyType Nz = 5u;
 
-        ClosestTriUniformGrid::InitInfo info = { Nx, Ny, Nz, origin, cellWidth };
+        ClosestTriUniformGrid::StructureInfo info = { Nx, Ny, Nz, origin, cellWidth };
         bool r = grid.Init(info);
         EXPECT_TRUE(r);
 
@@ -202,7 +202,7 @@ TEST(ClosestTriUniformGridUnitTests, UniformGridTriSpatialMapCell)
             Vector3(8.f, 8.f, 8.f)
         };
 
-        ClosestTriUniformGrid::InitInfo info = { Nx, Ny, Nz, origin, cellWidth };
+        ClosestTriUniformGrid::StructureInfo info = { Nx, Ny, Nz, origin, cellWidth };
         bool r = grid.Init(info);
         EXPECT_TRUE(r);
 
@@ -228,7 +228,7 @@ TEST(ClosestTriUniformGridUnitTests, UniformGridTriSpatialMapCell)
     {
         grid.Clear();
 
-        ClosestTriUniformGrid::InitInfo info = { Nx, Ny, Nz, origin, cellWidth };
+        ClosestTriUniformGrid::StructureInfo info = { Nx, Ny, Nz, origin, cellWidth };
         bool r = grid.Init(info);
         EXPECT_TRUE(r);
 
@@ -286,7 +286,7 @@ TEST(ClosestTriUniformGridUnitTests, UniformGridTriSpatialMapAddTri)
 
     // create grid and add tris
     {
-        ClosestTriUniformGrid::InitInfo info = { Nx, Ny, Nz, origin, cellWidth };
+        ClosestTriUniformGrid::StructureInfo info = { Nx, Ny, Nz, origin, cellWidth };
         bool r = grid.Init(info);
         EXPECT_TRUE(r);
 
@@ -366,7 +366,7 @@ TEST(ClosestTriUniformGridUnitTests, UniformGridTriSpatialMapFinalize)
 
     // create grid and add tris
     {
-        ClosestTriUniformGrid::InitInfo info = { Nx, Ny, Nz, origin, cellWidth };
+        ClosestTriUniformGrid::StructureInfo info = { Nx, Ny, Nz, origin, cellWidth };
         bool r = grid.Init(info);
         EXPECT_TRUE(r);
 
@@ -440,7 +440,7 @@ TEST(ClosestTriUniformGridUnitTests, UniformGridTriSpatialMapFindClosestPoint)
 
     // create grid and add tris
     {
-        ClosestTriUniformGrid::InitInfo info = { Nx, Ny, Nz, origin, cellWidth };
+        ClosestTriUniformGrid::StructureInfo info = { Nx, Ny, Nz, origin, cellWidth };
         bool r = grid.Init(info);
         EXPECT_TRUE(r);
 
@@ -558,7 +558,7 @@ TEST(ClosestTriUniformGridUnitTests, UniformGridTriSpatialMapFindClosestPointRan
 
     // create grid and add tris
     {
-        ClosestTriUniformGrid::InitInfo info = { Nx, Ny, Nz, origin, cellWidth };
+        ClosestTriUniformGrid::StructureInfo info = { Nx, Ny, Nz, origin, cellWidth };
         bool r = grid.Init(info);
         EXPECT_TRUE(r);
 

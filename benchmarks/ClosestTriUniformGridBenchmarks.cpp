@@ -133,7 +133,7 @@ BM_UniformGridTriSpatialMapClosestPointQuerySinglePoint(benchmark::State& state)
         std::vector<uint32_t> indices;
         s_createSphereMesh(Nsphere, Nsphere, vertices, indices);
 
-        ClosestTriUniformGrid::InitInfo info;
+        ClosestTriUniformGrid::StructureInfo info;
         info.Nx = Ngrid;
         info.Ny = Ngrid;
         info.Nz = Ngrid;
@@ -182,7 +182,7 @@ BM_UniformGridTriSpatialMapClosestPointQueryMultiplePoints(benchmark::State& sta
         std::vector<uint32_t> indices;
         s_createSphereMesh(Nsphere, Nsphere, vertices, indices);
 
-        ClosestTriUniformGrid::InitInfo info;
+        ClosestTriUniformGrid::StructureInfo info;
         info.Nx = Ngrid;
         info.Ny = Ngrid;
         info.Nz = Ngrid;

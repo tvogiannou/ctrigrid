@@ -28,11 +28,11 @@ ClosestTriUniformGrid::ComputeCellKeyFromPoint(const Vector3& point, MapCellKeyT
 
     // compute indices
     MapIndexType i, j, k;
-    if (!ComputeIndexFromPointGridSpace(c, i, j, k))
+    if (!ComputeIndexFromPointGridSpace(m_cellWidth, c, i, j, k))
         return false;
 
     // compute key
-    if (!ComputeCellKeyFromIndex(i, j, k, key))
+    if (!ComputeCellKeyFromIndex(m_Nx, m_Ny, m_Nz, i, j, k, key))
         return false;
 
     return true;
@@ -268,11 +268,11 @@ ClosestTriUniformGrid::ComputeMemFootprint() const
 
     stats.verticesAllocMem = m_vertices.capacity() * sizeof(Vector3);
     stats.trisAllocMem += m_tris.capacity() * sizeof(TriInfo);
-    stats.cellsAllocMem += m_triCells.capacity() * sizeof(TriCellBucket);
+    // stats.cellsAllocMem += m_triCells.capacity() * sizeof(TriCellBucket);
     stats.cellsAllocMem += m_indexCells.capacity() * sizeof(BitStreamBuffer::BufferIndexType);
     stats.cellIndicesAllocMem = 0u;
-    for (const TriCellBucket& cell : m_triCells)
-        stats.cellIndicesAllocMem += cell.triIndices.capacity() * sizeof(MapTriKeyType);
+    // for (const TriCellBucket& cell : m_triCells)
+        // stats.cellIndicesAllocMem += cell.triIndices.capacity() * sizeof(MapTriKeyType);
     stats.cellIndicesAllocMem += m_indexBitStream.GetSizeInBytes();
 
     return stats;
@@ -294,21 +294,6 @@ ClosestTriUniformGrid::GetClosestTrisOnCell(MapCellKeyType key, MapTriKeyArrayTy
     reader.Begin(startPos, endPos);
     while (!reader.Finished())
         triIndices.push_back((MapTriKeyType)reader.Next());
-
-    return true;
-}
-
-bool
-ClosestTriUniformGrid::GetOverlappingTrisOnCell(MapCellKeyType key, MapTriKeyArrayType& triIndices) const
-{
-    if (key >= (MapCellKeyType)m_triCells.size())
-        return false;
-
-    triIndices.clear();
-
-    const TriCellBucket& bucket = m_triCells[key];
-    for (MapTriKeyType triKey : bucket.triIndices)
-        triIndices.push_back(triKey);
 
     return true;
 }

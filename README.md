@@ -92,7 +92,7 @@ citrgrid::ClosestTriUniformGrid::MapCellKeyType Nz = ...    // Number of cells a
 float cellWidth = ...                                       // Width of the cell, size is the same along all dimensions
 Vector3 origin = ...                                        // Origin of the grid in world space, i.e. cell at index (0, 0, 0) 
 citrgrid::ClosestTriUniformGrid grid;
-citrgrid::ClosestTriUniformGrid::InitInfo info = { Nx, Ny, Nz, origin, cellWidth };
+citrgrid::ClosestTriUniformGrid::StructureInfo info = { Nx, Ny, Nz, origin, cellWidth };
 grid.Init(info);
 
 // construct from a triangle mesh

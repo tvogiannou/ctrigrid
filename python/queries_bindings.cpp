@@ -12,7 +12,7 @@
 CTRIGRID_UniformGrid_wrapper::CTRIGRID_UniformGrid_wrapper(uint32_t Nx, uint32_t Ny, uint32_t Nz, float cellWidth,
     const CTRIGRID_Vector3_wrapper& origin)
 {
-    ctrigrid::ClosestTriUniformGrid::InitInfo info;
+    ctrigrid::ClosestTriUniformGrid::StructureInfo info;
     info.Nx = Nx;
     info.Ny = Ny;
     info.Nz = Nz;

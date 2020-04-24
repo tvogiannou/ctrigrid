@@ -63,14 +63,15 @@ struct GridBorderRegionHelper
 
     // gets the keys for the cells that lie in the border of this region
     bool GetCellKeysFromRegion(
-        const ClosestTriUniformGrid& grid,
+        const ClosestTriUniformGrid::Builder& builder,
         ClosestTriUniformGrid::MapCellKeyArrayType& cellRegionKeys)
     {
         // special case
         if (iMin == iMax && jMin == jMax && kMin == kMax)
         {
             ClosestTriUniformGrid::MapCellKeyType key;
-            if (!grid.ComputeCellKeyFromIndex(iMin, jMin, kMin, key))
+            if (!ClosestTriUniformGrid::ComputeCellKeyFromIndex(
+                builder.m_Nx, builder.m_Ny, builder.m_Nz, iMin, jMin, kMin, key))
                 return false;
             cellRegionKeys.push_back(key);
 
@@ -83,13 +84,13 @@ struct GridBorderRegionHelper
             for (ClosestTriUniformGrid::MapIndexType j = jMin; j <= jMax; ++j)
             {
                 ClosestTriUniformGrid::MapCellKeyType key;
-                if (!grid.ComputeCellKeyFromIndex(i, j, kMin, key)) 
+                if (!ClosestTriUniformGrid::ComputeCellKeyFromIndex(builder.m_Nx, builder.m_Ny, builder.m_Nz, i, j, kMin, key)) 
                     return false;
                 cellRegionKeys.push_back(key);
 
                 if (kMin != kMax)
                 {
-	                if (!grid.ComputeCellKeyFromIndex(i, j, kMax, key))
+	                if (!ClosestTriUniformGrid::ComputeCellKeyFromIndex(builder.m_Nx, builder.m_Ny, builder.m_Nz, i, j, kMax, key))
 	                    return false;
 	                cellRegionKeys.push_back(key);
                 }
@@ -102,13 +103,13 @@ struct GridBorderRegionHelper
             for (ClosestTriUniformGrid::MapIndexType i = iMin; i <= iMax; ++i)
             {
                 ClosestTriUniformGrid::MapCellKeyType key;
-                if (!grid.ComputeCellKeyFromIndex(i, jMin, k, key))
+                if (!ClosestTriUniformGrid::ComputeCellKeyFromIndex(builder.m_Nx, builder.m_Ny, builder.m_Nz, i, jMin, k, key))
                     return false;
                 cellRegionKeys.push_back(key);
 
                 if (jMin != jMax)
                 {
-                    if (!grid.ComputeCellKeyFromIndex(i, jMax, k, key))
+                    if (!ClosestTriUniformGrid::ComputeCellKeyFromIndex(builder.m_Nx, builder.m_Ny, builder.m_Nz, i, jMax, k, key))
                         return false;
                     cellRegionKeys.push_back(key);
                 }
@@ -118,13 +119,13 @@ struct GridBorderRegionHelper
             for (ClosestTriUniformGrid::MapIndexType j = jMin; j <= jMax; ++j)
             {
                 ClosestTriUniformGrid::MapCellKeyType key;
-                if (!grid.ComputeCellKeyFromIndex(iMin, j, k, key))
+                if (!ClosestTriUniformGrid::ComputeCellKeyFromIndex(builder.m_Nx, builder.m_Ny, builder.m_Nz, iMin, j, k, key))
                     return false;
                 cellRegionKeys.push_back(key);
 
                 if (iMin != iMax)
                 {
-                    if (!grid.ComputeCellKeyFromIndex(iMax, j, k, key))
+                    if (!ClosestTriUniformGrid::ComputeCellKeyFromIndex(builder.m_Nx, builder.m_Ny, builder.m_Nz, iMax, j, k, key))
                         return false;
                     cellRegionKeys.push_back(key);
                 }
@@ -137,43 +138,46 @@ struct GridBorderRegionHelper
 
 bool 
 ClosestTriUniformGrid::ComputeCellKeyFromIndex(
-    MapIndexType i, MapIndexType j, MapIndexType k, MapCellKeyType& key) const
+    MapIndexType Nx, MapIndexType Ny, MapIndexType Nz,
+    MapIndexType i, MapIndexType j, MapIndexType k, MapCellKeyType& key)
 {
-    if (i >= m_Nx || j >= m_Ny || k >= m_Nz)
+    if (i >= Nx || j >= Ny || k >= Nz)
         return false;
 
     //if (m_cells.empty())
     //    return false;
 
-    key = i + m_Nx * j + m_Nx * m_Ny * k;
+    key = i + Nx * j + Nx * Ny * k;
 
     return true;
 }
 
 bool 
 ClosestTriUniformGrid::ComputeIndexFromCellKey(
-    MapCellKeyType key, MapIndexType& i, MapIndexType& j, MapIndexType& k) const
+    MapIndexType Nx, MapIndexType Ny, MapIndexType Nz, 
+    MapCellKeyType key, MapIndexType& i, MapIndexType& j, MapIndexType& k)
 {
-    if (m_Nx == 0u || m_Ny == 0u || m_Nz == 0u)
+    if (Nx == 0u || Ny == 0u || Nz == 0u)
         return false;
 
-    k = (MapIndexType)(key / (m_Nx * m_Ny));
-    key = (MapIndexType)(key % (m_Nx * m_Ny));
-    j = (MapIndexType)(key / m_Nx);
-    i = (MapIndexType)(key % m_Nx);
+    k = (MapIndexType)(key / (Nx * Ny));
+    key = (MapIndexType)(key % (Nx * Ny));
+    j = (MapIndexType)(key / Nx);
+    i = (MapIndexType)(key % Nx);
 
     return true;
 }
 
 bool 
 ClosestTriUniformGrid::ComputeIndexFromPointGridSpace(
-    const Vector3& point, MapIndexType& i, MapIndexType& j, MapIndexType& k) const
+    float cellWidth, const Vector3& point, 
+    MapIndexType& i, MapIndexType& j, MapIndexType& k)
 {
-    if (m_cellWidth <= 0.f)
+    if (cellWidth <= 0.f)
         return false;
 
     Vector3 c = point;
-    c.Div(Vector3(m_cellWidth, m_cellWidth, m_cellWidth));
+    c.Div(Vector3(cellWidth, cellWidth, cellWidth));
 
     i = (MapIndexType)c.x;
     j = (MapIndexType)c.y;
@@ -183,7 +187,7 @@ ClosestTriUniformGrid::ComputeIndexFromPointGridSpace(
 }
 
 bool 
-ClosestTriUniformGrid::ComputeCelBBoxWorldSpace(
+ClosestTriUniformGrid::Builder::ComputeCelBBoxWorldSpace(
     MapIndexType i, MapIndexType j, MapIndexType k, AxisAlignedBoundingBox& bbox) const
 {
     if (!ComputeCelBBoxGridSpace(i, j, k, bbox))
@@ -197,7 +201,8 @@ ClosestTriUniformGrid::ComputeCelBBoxWorldSpace(
 }
 
 bool 
-ClosestTriUniformGrid::ComputeCelBBoxGridSpace(MapIndexType i, MapIndexType j, MapIndexType k, AxisAlignedBoundingBox& bbox) const
+ClosestTriUniformGrid::Builder::ComputeCelBBoxGridSpace(
+    MapIndexType i, MapIndexType j, MapIndexType k, AxisAlignedBoundingBox& bbox) const
 {
     if (i >= m_Nx || j >= m_Ny || k >= m_Nz)
         return false;
@@ -215,7 +220,7 @@ ClosestTriUniformGrid::ComputeCelBBoxGridSpace(MapIndexType i, MapIndexType j, M
 }
 
 bool 
-ClosestTriUniformGrid::Init(const InitInfo& info)
+ClosestTriUniformGrid::Builder::Init(const StructureInfo& info)
 {
     if (info.Nx == 0u || info.Ny == 0u || info.Nz == 0u)
         return false;
@@ -240,7 +245,7 @@ ClosestTriUniformGrid::Init(const InitInfo& info)
 }
 
 bool 
-ClosestTriUniformGrid::Clear()
+ClosestTriUniformGrid::Builder::Clear()
 {
     m_Nx = 0u;
     m_Ny = 0u;
@@ -251,17 +256,17 @@ ClosestTriUniformGrid::Clear()
     m_tris.clear();
     m_triCells.clear();
     
-    m_indexBitWidth = 0u;
-    m_lastBitPos = 0u;
-    m_indexCells.clear();
-    m_indexBitStream.Clear();
-    m_indexBitStream.Pack();
+    // m_indexBitWidth = 0u;
+    // m_lastBitPos = 0u;
+    // m_indexCells.clear();
+    // m_indexBitStream.Clear();
+    // m_indexBitStream.Pack();
 
     return true;
 }
 
 bool 
-ClosestTriUniformGrid::BeginGridSetup()
+ClosestTriUniformGrid::Builder::BeginGridSetup()
 {
     if (!m_vertices.empty() || !m_tris.empty() || !m_triCells.empty())
         return false;
@@ -275,7 +280,7 @@ ClosestTriUniformGrid::BeginGridSetup()
 }
 
 bool 
-ClosestTriUniformGrid::FinalizeGridSetup()
+ClosestTriUniformGrid::Builder::FinalizeGridSetup(ClosestTriUniformGrid& grid)
 {
     if (m_tris.empty() || m_triCells.empty())
         return false;
@@ -286,17 +291,17 @@ ClosestTriUniformGrid::FinalizeGridSetup()
     // figure out the width required for the number of tris we got
     {
         size_t maxTriIndex = m_tris.size();
-        m_indexBitWidth = 1;
-        while (maxTriIndex >>= 1u) ++m_indexBitWidth;
+        grid.m_indexBitWidth = 1;
+        while (maxTriIndex >>= 1u) ++grid.m_indexBitWidth;
     }
     
     // setup the bit stream for the indices
-    m_indexBitStream.Clear();
-    BitStreamWriter writer(m_indexBitStream, m_indexBitWidth);
+    grid.m_indexBitStream.Clear();
+    BitStreamWriter writer(grid.m_indexBitStream, grid.m_indexBitWidth);
     writer.Begin(m_tris.size() + sizeof(uint64_t) + 1u);    // rough estimate for initialization
-    m_indexCells.clear();
-    m_indexCells.resize(m_Nx * m_Ny * m_Nz);
-    m_indexCells.shrink_to_fit();
+    grid.m_indexCells.clear();
+    grid.m_indexCells.resize(m_Nx * m_Ny * m_Nz);
+    grid.m_indexCells.shrink_to_fit();
 
     // loop through all the cells and find the nearest ones with tris
     for (ClosestTriUniformGrid::MapIndexType k = 0u; k < m_Nz; ++k)
@@ -306,7 +311,7 @@ ClosestTriUniformGrid::FinalizeGridSetup()
             for (ClosestTriUniformGrid::MapIndexType i = 0u; i < m_Nx; ++i)
             {
                 MapCellKeyType cellKey;
-                if (!ComputeCellKeyFromIndex(i, j, k, cellKey))
+                if (!ComputeCellKeyFromIndex(m_Nx, m_Ny, m_Nz, i, j, k, cellKey))
                     return false;
 
                 MapTriKeyArrayType cellTris;// = m_triCells.at(cellKey).triIndices;
@@ -368,12 +373,12 @@ ClosestTriUniformGrid::FinalizeGridSetup()
                     //cellTris.shrink_to_fit();
 
                     // check if we need to expand the bit stream
-                    if (writer.GetCurrentWritePos() + cellTris.size() * m_indexBitWidth + 64u >=
-                        m_indexBitStream.GetSizeInBits())
-                        m_indexBitStream.Resize(2 * m_indexBitStream.GetSizeInBytes());
+                    if (writer.GetCurrentWritePos() + cellTris.size() * grid.m_indexBitWidth + 64u >=
+                        grid.m_indexBitStream.GetSizeInBits())
+                        grid.m_indexBitStream.Resize(2 * grid.m_indexBitStream.GetSizeInBytes());
 
                     // now store the indices to the bit stream
-                    m_indexCells.at(cellKey) = writer.GetCurrentWritePos();
+                    grid.m_indexCells.at(cellKey) = writer.GetCurrentWritePos();
                     for (MapTriKeyType t : cellTris)
                         writer.WriteNext(t);
                 }
@@ -383,18 +388,27 @@ ClosestTriUniformGrid::FinalizeGridSetup()
 
     // clear temp data
     m_triCells.clear();
-    m_triCells.shrink_to_fit();
+    // m_triCells.shrink_to_fit();
 
     // finalize the bit stream
-    m_lastBitPos = writer.GetCurrentWritePos();
+    grid.m_lastBitPos = writer.GetCurrentWritePos();
     writer.Finalize();
-    m_indexBitStream.Pack();
+    grid.m_indexBitStream.Pack();
+
+    // copy params
+    grid.m_Nx = m_Nx;
+    grid.m_Ny = m_Ny;
+    grid.m_Nz = m_Nz;
+    grid.m_cellWidth = m_cellWidth;
+    grid.m_gridBBoxWorldSpace = m_gridBBoxWorldSpace;
+    grid.m_vertices = std::move(m_vertices);
+    grid.m_tris = std::move(m_tris);
 
     return true;
 }
 
 bool 
-ClosestTriUniformGrid::AddTriMesh(const std::vector<float>& vertices, const std::vector<uint32_t>& indices)
+ClosestTriUniformGrid::Builder::AddTriMesh(const std::vector<float>& vertices, const std::vector<uint32_t>& indices)
 {
     // vertices and indices arrays need to be multiples of 3
     if (vertices.size() % 3u != 0 || indices.size() % 3u != 0)
@@ -448,9 +462,9 @@ ClosestTriUniformGrid::AddTriMesh(const std::vector<float>& vertices, const std:
         // get min & max map indices
         MapIndexType iMin, jMin, kMin;
         MapIndexType iMax, jMax, kMax;
-        if (!ComputeIndexFromPointGridSpace(triBox.min, iMin, jMin, kMin))
+        if (!ComputeIndexFromPointGridSpace(m_cellWidth, triBox.min, iMin, jMin, kMin))
             return false;
-        if (!ComputeIndexFromPointGridSpace(triBox.max, iMax, jMax, kMax))
+        if (!ComputeIndexFromPointGridSpace(m_cellWidth,triBox.max, iMax, jMax, kMax))
             return false;
 
         // loop all cells and add tri if overlapping
@@ -468,7 +482,7 @@ ClosestTriUniformGrid::AddTriMesh(const std::vector<float>& vertices, const std:
                     if (IntersectionQuery::OverlapAxisAlignedBoxTri(cellBox, v0, v1, v2))
                     {
                         ClosestTriUniformGrid::MapCellKeyType cellKey;
-                        if (!ComputeCellKeyFromIndex(i, j, k, cellKey))
+                        if (!ComputeCellKeyFromIndex(m_Nx, m_Ny, m_Nz, i, j, k, cellKey))
                             return false;
 
                         AddTriToBucket(cellKey, triKey);
@@ -483,7 +497,8 @@ ClosestTriUniformGrid::AddTriMesh(const std::vector<float>& vertices, const std:
 }
 
 void 
-ClosestTriUniformGrid::CreateTriInfoFromTriIndices(MapTriKeyType idx0, MapTriKeyType idx1, MapTriKeyType idx2, TriInfo& info)
+ClosestTriUniformGrid::Builder::CreateTriInfoFromTriIndices(
+    MapTriKeyType idx0, MapTriKeyType idx1, MapTriKeyType idx2, TriInfo& info)
 {
     info.idx0 = idx0;
     info.idx1 = idx1;
@@ -523,7 +538,7 @@ ClosestTriUniformGrid::CreateTriInfoFromTriIndices(MapTriKeyType idx0, MapTriKey
 }
 
 ClosestTriUniformGrid::MapCellKeyType 
-ClosestTriUniformGrid::AddTriInfo(const TriInfo& info)
+ClosestTriUniformGrid::Builder::AddTriInfo(const TriInfo& info)
 {
     m_tris.emplace_back(info);
 
@@ -531,13 +546,28 @@ ClosestTriUniformGrid::AddTriInfo(const TriInfo& info)
 }
 
 void 
-ClosestTriUniformGrid::AddTriToBucket(MapCellKeyType cellKey, MapTriKeyType triKey)
+ClosestTriUniformGrid::Builder::AddTriToBucket(MapCellKeyType cellKey, MapTriKeyType triKey)
 {
     TriCellBucket& bucket = m_triCells.at(cellKey);
 
     // TODO: keep sorted to optimize search
     if (std::find(bucket.triIndices.begin(), bucket.triIndices.end(), triKey) == bucket.triIndices.end())
         bucket.triIndices.push_back(triKey);
+}
+
+bool
+ClosestTriUniformGrid::Builder::GetOverlappingTrisOnCell(MapCellKeyType key, MapTriKeyArrayType& triIndices) const
+{
+    if (key >= (MapCellKeyType)m_triCells.size())
+        return false;
+
+    triIndices.clear();
+
+    const TriCellBucket& bucket = m_triCells[key];
+    for (MapTriKeyType triKey : bucket.triIndices)
+        triIndices.push_back(triKey);
+
+    return true;
 }
 
 }
