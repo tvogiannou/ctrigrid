@@ -287,13 +287,12 @@ ClosestTriUniformGrid::Builder::FinalizeGridSetup(ClosestTriUniformGrid& grid)
     if (m_tris.empty() || m_triCells.empty())
         return false;
 
+    grid.Clear();
     std::tie(grid.m_Nx, grid.m_Ny, grid.m_Nz)= Nxyz;
 
     if (grid.m_Nx == 0u || grid.m_Ny == 0u || grid.m_Nz == 0u)
         return false;
 
-    grid.Clear();
-    
     // figure out the width required for the number of tris we got
     {
         size_t maxTriIndex = m_tris.size();
