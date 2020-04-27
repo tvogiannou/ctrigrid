@@ -133,17 +133,18 @@ BM_UniformGridTriSpatialMapClosestPointQuerySinglePoint(benchmark::State& state)
         std::vector<uint32_t> indices;
         s_createSphereMesh(Nsphere, Nsphere, vertices, indices);
 
+        ClosestTriUniformGrid::Builder builder;
         ClosestTriUniformGrid::StructureInfo info;
         info.Nx = Ngrid;
         info.Ny = Ngrid;
         info.Nz = Ngrid;
         info.origin = Vector3(-2.f, -2.f, -2.f);
         info.cellWidth = 4.f / (float)Ngrid;
-        grid.Init(info);
+        builder.Init(info);
 
-        grid.BeginGridSetup();
-        grid.AddTriMesh(vertices, indices);
-        grid.FinalizeGridSetup();
+        builder.BeginGridSetup();
+        builder.AddTriMesh(vertices, indices);
+        builder.FinalizeGridSetup(grid);
     }
 
     const Vector3 p = Vector3::UNARY;
@@ -182,17 +183,18 @@ BM_UniformGridTriSpatialMapClosestPointQueryMultiplePoints(benchmark::State& sta
         std::vector<uint32_t> indices;
         s_createSphereMesh(Nsphere, Nsphere, vertices, indices);
 
+        ClosestTriUniformGrid::Builder builder;
         ClosestTriUniformGrid::StructureInfo info;
         info.Nx = Ngrid;
         info.Ny = Ngrid;
         info.Nz = Ngrid;
         info.origin = Vector3(-2.f, -2.f, -2.f);
         info.cellWidth = 4.f / (float)Ngrid;
-        grid.Init(info);
+        builder.Init(info);
 
-        grid.BeginGridSetup();
-        grid.AddTriMesh(vertices, indices);
-        grid.FinalizeGridSetup();
+        builder.BeginGridSetup();
+        builder.AddTriMesh(vertices, indices);
+        builder.FinalizeGridSetup(grid);
     }
 
     // generate random points
