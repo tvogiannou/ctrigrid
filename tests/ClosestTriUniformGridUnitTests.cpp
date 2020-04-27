@@ -6,7 +6,7 @@
 
 #include <vector>
 #include <random>
-
+#include <functional>
 
 
 static 
@@ -16,8 +16,8 @@ void s_CheckStoredTrisInCell(
     ctrigrid::ClosestTriUniformGrid::MapIndexType j, 
     ctrigrid::ClosestTriUniformGrid::MapIndexType k,
     size_t expectedCount,
-    std::function<                                                  // test function to retrieve the triangles to test againt
-    bool(ctrigrid::ClosestTriUniformGrid::MapCellKeyType key,       // can be different between the grid and the builder
+    std::function<                                                  // function to retrieve the triangles to test againt
+    bool(ctrigrid::ClosestTriUniformGrid::MapCellKeyType key,       // it is different between the grid and the builder
          ctrigrid::ClosestTriUniformGrid::MapTriKeyArrayType&)> GetTris)
 {
     using namespace ctrigrid;
@@ -522,6 +522,7 @@ TEST(ClosestTriUniformGridUnitTests, UniformGridTriSpatialMapFindClosestPoint)
 TEST(ClosestTriUniformGridUnitTests, UniformGridTriSpatialMapFindClosestPointRandom)
 {
     using namespace ctrigrid;
+
 
     const float tolerance = 4e-2f;      // the SSE version of ClosestPointOnTri seems to introduce
                                         // significant precision errors, need to investigate
