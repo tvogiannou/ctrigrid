@@ -17,22 +17,24 @@ namespace ctrigrid
 {
 
 bool 
-ClosestTriUniformGrid::ComputeCellKeyFromPoint(const Vector3& point, MapCellKeyType& key) const
+ClosestTriUniformGrid::ComputeCellKeyFromPoint(
+    CellIndex3 Nxyz, float cellWidth, const AxisAlignedBoundingBox& gridBox,
+    const Vector3& point, MapCellKeyType& key)
 {
-    if (!m_gridBBoxWorldSpace.Contains(point))
+    if (!gridBox.Contains(point))
         return false;
 
     // transform to grid space
     Vector3 c = point;
-    c.Sub(m_gridBBoxWorldSpace.min);
+    c.Sub(gridBox.min);
 
     // compute indices
     MapIndexType i, j, k;
-    if (!ComputeIndexFromPointGridSpace(m_cellWidth, c, i, j, k))
+    if (!ComputeIndexFromPointGridSpace(cellWidth, c, i, j, k))
         return false;
 
     // compute key
-    if (!ComputeCellKeyFromIndex(m_Nx, m_Ny, m_Nz, i, j, k, key))
+    if (!ComputeCellKeyFromIndex(Nxyz, ToIndex3(i, j, k), key))
         return false;
 
     return true;
@@ -43,7 +45,8 @@ ClosestTriUniformGrid::FindClosestPointOnTris(
     const Vector3& p, Vector3& closestPoint, MapTriKeyType& triKey, bool forceInGrid) const
 {
     MapCellKeyType cellKey;
-    if (!ComputeCellKeyFromPoint(p, cellKey))
+    if (!ComputeCellKeyFromPoint(
+            ToIndex3(m_Nx, m_Ny, m_Nz), m_cellWidth, m_gridBBoxWorldSpace, p, cellKey))
     {
         if (forceInGrid)    // force the result to be inside the grid
             return false;
@@ -60,7 +63,8 @@ ClosestTriUniformGrid::FindClosestPointOnTris(
         d.Normalize();
         closestCellPoint.MulAdd(m_cellWidth * .5f, d);
 
-        if (!ComputeCellKeyFromPoint(closestCellPoint, cellKey))
+        if (!ComputeCellKeyFromPoint(
+            ToIndex3(m_Nx, m_Ny, m_Nz), m_cellWidth, m_gridBBoxWorldSpace, closestCellPoint, cellKey))
         {
             // Should never get here!
             CTRIGRID_ASSERT(false);
@@ -319,5 +323,24 @@ ClosestTriUniformGrid::GetTriVerticesWorldSpace(
 
     return true;
 }
+
+void 
+ClosestTriUniformGrid::Clear()
+{
+    m_Nx = 0u;
+    m_Ny = 0u;
+    m_Nz = 0u;
+    m_cellWidth = -1;
+    m_gridBBoxWorldSpace.Reset();
+
+    m_vertices.clear();
+    m_tris.clear();
+
+    m_indexBitWidth = 0u;
+    m_lastBitPos = 0u;
+    m_indexBitStream.Clear();
+    m_indexCells.clear();
+}
+
 
 }

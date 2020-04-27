@@ -6,7 +6,7 @@
 #include <ctrigrid/Vector3.h>
 
 #include <vector>
-
+#include <tuple>
 
 namespace ctrigrid
 {
@@ -26,30 +26,9 @@ public:
     using MapTriKeyType = uint32_t;
     using MapCellKeyArrayType = std::vector<MapTriKeyType>;
     using MapTriKeyArrayType = std::vector<MapTriKeyType>;
-
-
-    struct StructureInfo
-    {
-        MapIndexType    Nx, Ny, Nz;     // number of cells along each axis X/Y/Z
-        Vector3         origin;         // origin of the grid in world space
-        float           cellWidth;      // width of each cell along all dimensions
-    };
-
-    // indexing & cell methods
-    static bool ComputeCellKeyFromIndex(
-        MapIndexType Nx, MapIndexType Ny, MapIndexType Nz, 
-        MapIndexType i, MapIndexType j, MapIndexType k, 
-        MapCellKeyType& key);
-    static bool ComputeIndexFromCellKey(
-        MapIndexType Nx, MapIndexType Ny, MapIndexType Nz, 
-        MapCellKeyType key, MapIndexType& i, MapIndexType& j, 
-        MapIndexType& k);
-    static bool ComputeIndexFromPointGridSpace(
-        float cellWidth, 
-        const Vector3& point, 
-        MapIndexType& i, MapIndexType& j, MapIndexType& k);
+    using CellIndex3 = std::tuple<MapIndexType, MapIndexType, MapIndexType>;
     
-    bool ComputeCellKeyFromPoint(const Vector3& point, MapCellKeyType& key) const;
+    static CellIndex3 ToIndex3(MapIndexType a, MapIndexType b, MapIndexType c) { return std::make_tuple(a, b, c); }  
 
     // info stored for every tri
     struct TriInfo
@@ -63,9 +42,29 @@ public:
         // TODO: add face normal, side normals, etc
     };
 
-
     using TriInfoArrayType = std::vector<TriInfo>;
     using TriVertexArrayType = std::vector<Vector3>;
+
+    struct StructureInfo
+    {
+        MapIndexType    Nx, Ny, Nz;     // number of cells along each axis X/Y/Z
+        Vector3         origin;         // origin of the grid in world space
+        float           cellWidth;      // width of each cell along all dimensions
+    };
+
+
+    // indexing & cell methods
+    static bool ComputeCellKeyFromIndex(
+        CellIndex3 Nxyz, CellIndex3 ijk, MapCellKeyType& key);
+    static bool ComputeIndexFromCellKey(
+        CellIndex3 Nxyz, MapCellKeyType key, 
+        MapIndexType& i, MapIndexType& j, MapIndexType& k);
+    static bool ComputeIndexFromPointGridSpace(
+        float cellWidth, const Vector3& point, 
+        MapIndexType& i, MapIndexType& j, MapIndexType& k);
+    static bool ComputeCellKeyFromPoint(
+        CellIndex3 Nxyz, float cellWidth, const AxisAlignedBoundingBox& gridBox,
+        const Vector3& point, MapCellKeyType& key);
 
     struct Builder
     {
@@ -74,11 +73,10 @@ public:
         TriInfoArrayType m_tris;        // array of tris 
 
         // size & position data
-        MapIndexType            m_Nx = 0u;              // number of cells along X axis
-        MapIndexType            m_Ny = 0u;              // number of cells along Y axis
-        MapIndexType            m_Nz = 0u;              // number of cells along Z axis
-        float                   m_cellWidth = -1.f;     // width of each cell along all dimensions
-        AxisAlignedBoundingBox  m_gridBBoxWorldSpace;   // the bounding box of the entire grid, i.e. volume of all the cells
+        CellIndex3  Nxyz;                   // number of cells along X, Y, Z axis
+        float       m_cellWidth = -1.f;     // width of each cell along all dimensions
+        AxisAlignedBoundingBox  m_gridBBoxWorldSpace;   // the bounding box of the entire grid, 
+                                                        // i.e. volume of all the cells
 
         struct TriCellBucket
         {
@@ -91,7 +89,7 @@ public:
         CellBucketArrayType m_triCells; // cells pointing directly to overlapping tris
 
         bool Init(const StructureInfo& info);
-        bool Clear();
+        void Clear();
 
         // grid construction
         // vertices and indices are flattened buffers of vertex data, both expected to have sizes that are multiples of 3
@@ -111,7 +109,7 @@ public:
 
 
     ClosestTriUniformGrid() = default;
-    bool Clear();
+    void Clear();
 
     // accessors
     bool GetClosestTrisOnCell(MapCellKeyType key, MapTriKeyArrayType& triIndices) const;
@@ -128,12 +126,10 @@ public:
     // forceInGrid can be set to only look perform the query if p lies in the grid, if set to false then
     // the query is using the closest cell to p instead which is just an approximation and may lead to errors
     // in cases
-    bool FindClosestPointOnTris(const Vector3& p, Vector3& closestPoint, MapTriKeyType& triKey, bool forceInGrid = true) const;
+    bool FindClosestPointOnTris(
+        const Vector3& p, 
+        Vector3& closestPoint, MapTriKeyType& triKey, bool forceInGrid = true) const;
     // TODO: query buffer of points
-    
-    // TODO: update
-    //void ApplyTranslation(const Vector3& T);
-    //void ApplyTtransform(const Matrix4& X);
 
     // internal
     struct MemoryStats
@@ -146,12 +142,13 @@ public:
     // an estimate of the used memory by the grid
     MemoryStats ComputeMemFootprint() const;
 
+    // TODO: update
+    //void ApplyTranslation(const Vector3& T);
+    //void ApplyTtransform(const Matrix4& X);
+
 private:
 
     // vertex data buffers
-    // TODO: optimize storage using re-sizable buffers on creation & fixed buffers for saving/loading/queries
-    // using TriInfoArrayType = std::vector<TriInfo>;
-    // using TriVertexArrayType = std::vector<Vector3>;
     TriVertexArrayType m_vertices;  // array of vertices (grid space)
     TriInfoArrayType m_tris;        // array of tris 
 
