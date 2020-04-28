@@ -66,12 +66,12 @@ public:
     struct Builder
     {
         // data to also be stored in the grid
-        TriVertexArrayType      m_vertices;             // array of vertices (grid space)
-        TriInfoArrayType        m_tris;                 // array of tris 
-        CellIndex3              Nxyz;                   // number of cells along X, Y, Z axis
-        float                   m_cellWidth = -1.f;     // width of each cell along all dimensions
-        AxisAlignedBoundingBox  m_gridBBoxWorldSpace;   // the bounding box of the entire grid, 
-                                                        // i.e. volume of all the cells
+        TriVertexArrayType      vertices;           // array of vertices (grid space)
+        TriInfoArrayType        tris;               // array of tris 
+        CellIndex3              Nxyz;               // number of cells along X, Y, Z axis
+        float                   cellWidth = -1.f;   // width of each cell along all dimensions
+        AxisAlignedBoundingBox  gridBox;            // the bounding box of the entire grid, 
+                                                    // i.e. volume of all the cells
 
         // temp info about tris per cell
         struct TriCellBucket
@@ -93,9 +93,9 @@ public:
         // grid construction
         bool BeginGridSetup();
 
-        // vertices and indices are flattened buffers of vertex data, both expected to have sizes that are multiples of 3
+        // positions and indices are flattened buffers of vertex data, both expected to have sizes that are multiples of 3
         // NOTE: adding multiple meshes is not supported at the moment!
-        bool AddTriMesh(const std::vector<float>& vertices, const std::vector<uint32_t>& indices);
+        bool AddTriMesh(const std::vector<float>& positions, const std::vector<uint32_t>& indices);
         
         // finalize construction and store the result to the input grid
         // mesh data ownership is passed to the grid, rest of builder data is cleared

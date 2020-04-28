@@ -208,8 +208,8 @@ ClosestTriUniformGrid::Builder::ComputeCelBBoxWorldSpace(
         return false;
 
     // add grid origin
-    bbox.min.Add(m_gridBBoxWorldSpace.min);
-    bbox.max.Add(m_gridBBoxWorldSpace.min);
+    bbox.min.Add(gridBox.min);
+    bbox.max.Add(gridBox.min);
 
     return true;
 }
@@ -225,9 +225,9 @@ ClosestTriUniformGrid::Builder::ComputeCelBBoxGridSpace(
         return false;
 
     // compute start and end points of cell bbox
-    Vector3 p0(((float)i) * m_cellWidth, ((float)j) * m_cellWidth, ((float)k) * m_cellWidth);
+    Vector3 p0(((float)i) * cellWidth, ((float)j) * cellWidth, ((float)k) * cellWidth);
     Vector3 p1 = p0;
-    p1.Add(m_cellWidth);
+    p1.Add(cellWidth);
 
     bbox.Reset();
     bbox.AddPoint(p0);
@@ -246,16 +246,16 @@ ClosestTriUniformGrid::Builder::Init(const InitInfo& info)
 
     Nxyz = ClosestTriUniformGrid::ToIndex3(info.Nx, info.Ny, info.Nz);
 
-    m_cellWidth = info.cellWidth;
+    cellWidth = info.cellWidth;
 
-    Vector3 maxExtend(((float)info.Nx) * m_cellWidth, 
-                      ((float)info.Ny) * m_cellWidth, 
-                      ((float)info.Nz) * m_cellWidth);
+    Vector3 maxExtend(((float)info.Nx) * cellWidth, 
+                      ((float)info.Ny) * cellWidth, 
+                      ((float)info.Nz) * cellWidth);
     maxExtend.Add(info.origin);
     
-    m_gridBBoxWorldSpace.Reset();
-    m_gridBBoxWorldSpace.AddPoint(info.origin);
-    m_gridBBoxWorldSpace.AddPoint(maxExtend);
+    gridBox.Reset();
+    gridBox.AddPoint(info.origin);
+    gridBox.AddPoint(maxExtend);
 
     return true;
 }
@@ -264,18 +264,18 @@ void
 ClosestTriUniformGrid::Builder::Clear()
 {
     Nxyz = ClosestTriUniformGrid::ToIndex3(0u, 0u, 0u);
-    m_cellWidth = -1;
-    m_gridBBoxWorldSpace.Reset();
+    cellWidth = -1;
+    gridBox.Reset();
 
-    m_tris.clear();
-    m_vertices.clear();
+    tris.clear();
+    vertices.clear();
     m_triCells.clear();
 }
 
 bool 
 ClosestTriUniformGrid::Builder::BeginGridSetup()
 {
-    if (!m_vertices.empty() || !m_tris.empty() || !m_triCells.empty())
+    if (!vertices.empty() || !tris.empty() || !m_triCells.empty())
         return false;
 
     CellIndex Nx, Ny, Nz;
@@ -291,7 +291,7 @@ ClosestTriUniformGrid::Builder::BeginGridSetup()
 bool 
 ClosestTriUniformGrid::Builder::FinalizeGridSetup(ClosestTriUniformGrid& grid)
 {
-    if (m_tris.empty() || m_triCells.empty())
+    if (tris.empty() || m_triCells.empty())
         return false;
 
     grid.Clear();
@@ -302,7 +302,7 @@ ClosestTriUniformGrid::Builder::FinalizeGridSetup(ClosestTriUniformGrid& grid)
 
     // figure out the width required for the number of tris we got
     {
-        size_t maxTriIndex = m_tris.size();
+        size_t maxTriIndex = tris.size();
         grid.m_indexBitWidth = 1;
         while (maxTriIndex >>= 1u) ++grid.m_indexBitWidth;
     }
@@ -310,7 +310,7 @@ ClosestTriUniformGrid::Builder::FinalizeGridSetup(ClosestTriUniformGrid& grid)
     // setup the bit stream for the indices
     grid.m_indexBitStream.Clear();
     BitStreamWriter writer(grid.m_indexBitStream, grid.m_indexBitWidth);
-    writer.Begin(m_tris.size() + sizeof(uint64_t) + 1u);    // rough estimate for initialization
+    writer.Begin(tris.size() + sizeof(uint64_t) + 1u);    // rough estimate for initialization
     grid.m_indexCells.clear();
     grid.m_indexCells.resize(grid.m_Nx * grid.m_Ny * grid.m_Nz);
     grid.m_indexCells.shrink_to_fit();
@@ -409,10 +409,10 @@ ClosestTriUniformGrid::Builder::FinalizeGridSetup(ClosestTriUniformGrid& grid)
     grid.m_indexBitStream.Pack();
 
     // copy params
-    grid.m_cellWidth = m_cellWidth;
-    grid.m_gridBBoxWorldSpace = m_gridBBoxWorldSpace;
-    grid.m_vertices = std::move(m_vertices);
-    grid.m_tris = std::move(m_tris);
+    grid.m_cellWidth = cellWidth;
+    grid.m_gridBBoxWorldSpace = gridBox;
+    grid.m_vertices = std::move(vertices);
+    grid.m_tris = std::move(tris);
 
     Clear();
 
@@ -420,34 +420,35 @@ ClosestTriUniformGrid::Builder::FinalizeGridSetup(ClosestTriUniformGrid& grid)
 }
 
 bool 
-ClosestTriUniformGrid::Builder::AddTriMesh(const std::vector<float>& vertices, const std::vector<uint32_t>& indices)
+ClosestTriUniformGrid::Builder::AddTriMesh(
+    const std::vector<float>& positions, const std::vector<uint32_t>& indices)
 {
     // vertices and indices arrays need to be multiples of 3
-    if (vertices.size() % 3u != 0 || indices.size() % 3u != 0)
+    if (positions.size() % 3u != 0 || indices.size() % 3u != 0)
         return false;
 
     // gather vertices first
-    CTRIGRID_ASSERT(m_vertices.empty());
-    m_vertices.reserve(vertices.size() / 3u);
-    for (size_t i = 0u; i < vertices.size(); i += 3u)
+    CTRIGRID_ASSERT(vertices.empty());
+    vertices.reserve(positions.size() / 3u);
+    for (size_t i = 0u; i < positions.size(); i += 3u)
     {
-        Vector3 v(vertices[i], vertices[i+1], vertices[i+2]);
+        Vector3 v(positions[i], positions[i+1], positions[i+2]);
 
         // check if point is in grid bounding box
-        if (!m_gridBBoxWorldSpace.Contains(v))
+        if (!gridBox.Contains(v))
             return false;
 
         // transform vertex to grid space
-        v.Sub(m_gridBBoxWorldSpace.min);
+        v.Sub(gridBox.min);
 
         // add to storage
-        m_vertices.push_back(v);
+        vertices.push_back(v);
     }
-    m_vertices.shrink_to_fit();
+    vertices.shrink_to_fit();
 
     // add tris
-    CTRIGRID_ASSERT(m_tris.empty());
-    m_tris.reserve(indices.size() / 3u);
+    CTRIGRID_ASSERT(tris.empty());
+    tris.reserve(indices.size() / 3u);
     for (size_t triv = 0u; triv < indices.size(); triv += 3u)
     {
         // add new tri info
@@ -460,9 +461,9 @@ ClosestTriUniformGrid::Builder::AddTriMesh(const std::vector<float>& vertices, c
         TriKey triKey = AddTriInfo(info);
 
         // get vertices for the tri
-        const Vector3& v0 = m_vertices[idx0];
-        const Vector3& v1 = m_vertices[idx1];
-        const Vector3& v2 = m_vertices[idx2];
+        const Vector3& v0 = vertices[idx0];
+        const Vector3& v1 = vertices[idx1];
+        const Vector3& v2 = vertices[idx2];
 
         // compute aabox
         AxisAlignedBoundingBox triBox;
@@ -474,9 +475,9 @@ ClosestTriUniformGrid::Builder::AddTriMesh(const std::vector<float>& vertices, c
         // get min & max map indices
         CellIndex iMin, jMin, kMin;
         CellIndex iMax, jMax, kMax;
-        if (!ComputeIndexFromPointGridSpace(m_cellWidth, triBox.min, iMin, jMin, kMin))
+        if (!ComputeIndexFromPointGridSpace(cellWidth, triBox.min, iMin, jMin, kMin))
             return false;
-        if (!ComputeIndexFromPointGridSpace(m_cellWidth,triBox.max, iMax, jMax, kMax))
+        if (!ComputeIndexFromPointGridSpace(cellWidth,triBox.max, iMax, jMax, kMax))
             return false;
 
         // loop all cells and add tri if overlapping
@@ -504,7 +505,7 @@ ClosestTriUniformGrid::Builder::AddTriMesh(const std::vector<float>& vertices, c
             }
         }
     }
-    m_tris.shrink_to_fit();
+    tris.shrink_to_fit();
 
     return true;
 }
@@ -519,13 +520,13 @@ ClosestTriUniformGrid::Builder::CreateTriInfoFromTriIndices(
 
     // compute bounding sphere
     {
-        CTRIGRID_ASSERT(info.idx0 < m_vertices.size());
-        CTRIGRID_ASSERT(info.idx1 < m_vertices.size());
-        CTRIGRID_ASSERT(info.idx2 < m_vertices.size());
+        CTRIGRID_ASSERT(info.idx0 < vertices.size());
+        CTRIGRID_ASSERT(info.idx1 < vertices.size());
+        CTRIGRID_ASSERT(info.idx2 < vertices.size());
 
-        const Vector3& v0 = m_vertices[info.idx0];
-        const Vector3& v1 = m_vertices[info.idx1];
-        const Vector3& v2 = m_vertices[info.idx2];
+        const Vector3& v0 = vertices[info.idx0];
+        const Vector3& v1 = vertices[info.idx1];
+        const Vector3& v2 = vertices[info.idx2];
 
         // TODO: improve this by computing smaller sphere
         // centroid for center
@@ -553,9 +554,9 @@ ClosestTriUniformGrid::Builder::CreateTriInfoFromTriIndices(
 ClosestTriUniformGrid::CellKey 
 ClosestTriUniformGrid::Builder::AddTriInfo(const TriInfo& info)
 {
-    m_tris.emplace_back(info);
+    tris.emplace_back(info);
 
-    return (ClosestTriUniformGrid::CellKey)(m_tris.size() - 1u);
+    return (ClosestTriUniformGrid::CellKey)(tris.size() - 1u);
 }
 
 void 

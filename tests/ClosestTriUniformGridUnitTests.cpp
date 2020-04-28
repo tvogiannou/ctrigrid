@@ -208,12 +208,12 @@ TEST(ClosestTriUniformGridUnitTests, UniformGridTriSpatialMapCell)
 
         ClosestTriUniformGrid::CellKey key;
         bool r = ClosestTriUniformGrid::ComputeCellKeyFromPoint(
-            builder.Nxyz, cellWidth, builder.m_gridBBoxWorldSpace, pointsInside[0], key);
+            builder.Nxyz, cellWidth, builder.gridBox, pointsInside[0], key);
         EXPECT_TRUE(r);
         EXPECT_EQ(key, 0u);
 
         r = ClosestTriUniformGrid::ComputeCellKeyFromPoint(
-            builder.Nxyz, cellWidth, builder.m_gridBBoxWorldSpace, pointsInside[1], key); 
+            builder.Nxyz, cellWidth, builder.gridBox, pointsInside[1], key); 
         EXPECT_TRUE(r);
         EXPECT_EQ(key, Nx * Ny * Nz - 1u);
 
@@ -225,11 +225,11 @@ TEST(ClosestTriUniformGridUnitTests, UniformGridTriSpatialMapCell)
         };
 
         r = ClosestTriUniformGrid::ComputeCellKeyFromPoint(
-            builder.Nxyz, cellWidth, builder.m_gridBBoxWorldSpace, pointsOutside[0], key); 
+            builder.Nxyz, cellWidth, builder.gridBox, pointsOutside[0], key); 
         EXPECT_FALSE(r);
         
         r = ClosestTriUniformGrid::ComputeCellKeyFromPoint(
-            builder.Nxyz, cellWidth, builder.m_gridBBoxWorldSpace, pointsOutside[1], key); 
+            builder.Nxyz, cellWidth, builder.gridBox, pointsOutside[1], key); 
         EXPECT_FALSE(r);
     }
 
