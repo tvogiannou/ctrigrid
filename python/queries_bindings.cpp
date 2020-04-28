@@ -12,15 +12,11 @@
 CTRIGRID_UniformGrid_wrapper::CTRIGRID_UniformGrid_wrapper(uint32_t Nx, uint32_t Ny, uint32_t Nz, float cellWidth,
     const CTRIGRID_Vector3_wrapper& origin)
 {
-    ctrigrid::ClosestTriUniformGrid::InitInfo info;
     info.Nx = Nx;
     info.Ny = Ny;
     info.Nz = Nz;
     info.cellWidth = cellWidth;
     info.origin = origin.ToVector3();
-
-    if(!grid.Init(info))
-        throw std::runtime_error("Grid init failed: internal error");;
 }
 
 void CTRIGRID_UniformGrid_wrapper::Begin() {  }
@@ -31,6 +27,10 @@ void CTRIGRID_UniformGrid_wrapper::AddTris(
     pybind11::array_t<float, pybind11::array::c_style | pybind11::array::forcecast> vertices,
     pybind11::array_t<uint32_t> indices)
 {
+    ctrigrid::ClosestTriUniformGrid::Builder builder;
+    if(!builder.Init(info))
+        throw std::runtime_error("Grid builder init failed: internal error");
+    
     pybind11::buffer_info vertexBufferInfo = vertices.request();
     pybind11::buffer_info indexBufferInfo = indices.request();
 
@@ -50,12 +50,12 @@ void CTRIGRID_UniformGrid_wrapper::AddTris(
     std::memcpy(v.data(), vtx, numVertices * sizeof(float));
     std::memcpy(i.data(), idx, numIndices * sizeof(uint32_t));
 
-    if (!grid.BeginGridSetup()) 
-        throw std::runtime_error("Grid begin failed: internal error");
-    if (!grid.AddTriMesh(v, i))
-        throw std::runtime_error("Grid AddTriMesh failed: internal error");
-    if (!grid.FinalizeGridSetup()) 
-        throw std::runtime_error("Grid finalize failed: internal error");
+    if (!builder.BeginGridSetup()) 
+        throw std::runtime_error("Grid builder begin failed: internal error");
+    if (!builder.AddTriMesh(v, i))
+        throw std::runtime_error("Grid builder AddTriMesh failed: internal error");
+    if (!builder.FinalizeGridSetup(grid)) 
+        throw std::runtime_error("Grid builder finalize failed: internal error");
 }
 
 std::tuple<CTRIGRID_Vector3_wrapper, size_t> 
@@ -64,7 +64,7 @@ CTRIGRID_UniformGrid_wrapper::FindClosestPointOnTris(const CTRIGRID_Vector3_wrap
     const ctrigrid::Vector3 _p = p.ToVector3();
 
     ctrigrid::Vector3 _closestPoint;
-    ctrigrid::ClosestTriUniformGrid::MapTriKeyType triKey;
+    ctrigrid::ClosestTriUniformGrid::TriKey triKey;
     if(!grid.FindClosestPointOnTris(_p, _closestPoint, triKey))
         throw std::runtime_error("Grid FindClosestPointOnTris failed: internal error");
 
@@ -105,7 +105,7 @@ CTRIGRID_UniformGrid_wrapper::FindAllClosestPointsOnTris(pybind11::array_t<float
             const ctrigrid::Vector3 p(pts[i], pts[i + 1], pts[i + 2]);
 
             ctrigrid::Vector3 _closestPoint;
-            ctrigrid::ClosestTriUniformGrid::MapTriKeyType triKey;
+            ctrigrid::ClosestTriUniformGrid::TriKey triKey;
             //bool forceInGrid = false;
             if (!grid.FindClosestPointOnTris(p, _closestPoint, triKey, forceInGrid))
                 throw std::runtime_error("Grid FindClosestPointOnTris failed: internal error");

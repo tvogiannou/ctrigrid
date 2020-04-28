@@ -38,6 +38,7 @@ set(CTRIGRID_SOURCE_FILES
     ${CMAKE_CURRENT_LIST_DIR}/src/BitStream.cpp
     ${CMAKE_CURRENT_LIST_DIR}/src/ClosestTriUniformGrid.cpp
     ${CMAKE_CURRENT_LIST_DIR}/src/ClosestTriUniformGrid_Builder.cpp
+    ${CMAKE_CURRENT_LIST_DIR}/src/ClosestTriUniformGrid_Index.cpp
     ${CMAKE_CURRENT_LIST_DIR}/src/TriQueries.cpp
     ${CMAKE_CURRENT_LIST_DIR}/src/Vector3.cpp
     ${CMAKE_CURRENT_LIST_DIR}/src/Vector4.cpp

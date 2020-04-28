@@ -1,5 +1,4 @@
 
-
 #include <ctrigrid/ClosestTriUniformGrid.h>
 
 #include <ctrigrid/Compiler.h>
@@ -17,33 +16,12 @@ namespace ctrigrid
 {
 
 bool 
-ClosestTriUniformGrid::ComputeCellKeyFromPoint(const Vector3& point, MapCellKeyType& key) const
-{
-    if (!m_gridBBoxWorldSpace.Contains(point))
-        return false;
-
-    // transform to grid space
-    Vector3 c = point;
-    c.Sub(m_gridBBoxWorldSpace.min);
-
-    // compute indices
-    MapIndexType i, j, k;
-    if (!ComputeIndexFromPointGridSpace(c, i, j, k))
-        return false;
-
-    // compute key
-    if (!ComputeCellKeyFromIndex(i, j, k, key))
-        return false;
-
-    return true;
-}
-
-bool 
 ClosestTriUniformGrid::FindClosestPointOnTris(
-    const Vector3& p, Vector3& closestPoint, MapTriKeyType& triKey, bool forceInGrid) const
+    const Vector3& p, Vector3& closestPoint, TriKey& triKey, bool forceInGrid) const
 {
-    MapCellKeyType cellKey;
-    if (!ComputeCellKeyFromPoint(p, cellKey))
+    CellKey cellKey;
+    if (!ComputeCellKeyFromPoint(
+            ToIndex3(m_Nx, m_Ny, m_Nz), m_cellWidth, m_gridBBoxWorldSpace, p, cellKey))
     {
         if (forceInGrid)    // force the result to be inside the grid
             return false;
@@ -60,7 +38,8 @@ ClosestTriUniformGrid::FindClosestPointOnTris(
         d.Normalize();
         closestCellPoint.MulAdd(m_cellWidth * .5f, d);
 
-        if (!ComputeCellKeyFromPoint(closestCellPoint, cellKey))
+        if (!ComputeCellKeyFromPoint(
+            ToIndex3(m_Nx, m_Ny, m_Nz), m_cellWidth, m_gridBBoxWorldSpace, closestCellPoint, cellKey))
         {
             // Should never get here!
             CTRIGRID_ASSERT(false);
@@ -72,17 +51,16 @@ ClosestTriUniformGrid::FindClosestPointOnTris(
     localP.Sub(m_gridBBoxWorldSpace.min);
 
     CTRIGRID_ASSERT(cellKey < m_indexCells.size());
-    //const MapTriKeyArrayType& tris = m_triCells[cellKey].triIndices;
-    const BitStreamBuffer::BufferIndexType startPos = m_indexCells[cellKey];
-    const BitStreamBuffer::BufferIndexType endPos = 
+    const BitStreamBuffer::BufferIndex startPos = m_indexCells[cellKey];
+    const BitStreamBuffer::BufferIndex endPos = 
         cellKey + 1u == m_indexCells.size() ? m_lastBitPos : m_indexCells[cellKey + 1u];
     BitStreamReader reader(m_indexBitStream, m_indexBitWidth);
     reader.Begin(startPos, endPos);
 
 #ifdef CTRIGRID_GRID_BOUNDS_CHECK
-    MapTriKeyArrayType triIndices;
+    TriKeyArray triIndices;
     while (!reader.Finished())
-        triIndices.push_back((MapTriKeyType)reader.Next());
+        triIndices.push_back((TriKey)reader.Next());
 
     // first compute bounds for all tris
     struct Bounds { float min, max; };
@@ -102,10 +80,10 @@ ClosestTriUniformGrid::FindClosestPointOnTris(
         int64_t wideI = 0;
         for (wideI = 0; wideI < batchCount; wideI +=4u)
         {
-            const MapTriKeyType triIndex0 = triIndices[(size_t)wideI];
-            const MapTriKeyType triIndex1 = triIndices[(size_t)wideI + 1];
-            const MapTriKeyType triIndex2 = triIndices[(size_t)wideI + 2];
-            const MapTriKeyType triIndex3 = triIndices[(size_t)wideI + 3];
+            const TriKey triIndex0 = triIndices[(size_t)wideI];
+            const TriKey triIndex1 = triIndices[(size_t)wideI + 1];
+            const TriKey triIndex2 = triIndices[(size_t)wideI + 2];
+            const TriKey triIndex3 = triIndices[(size_t)wideI + 3];
 
             const TriInfo& info0 = m_tris[triIndex0];
             const TriInfo& info1 = m_tris[triIndex1];
@@ -153,7 +131,7 @@ ClosestTriUniformGrid::FindClosestPointOnTris(
         // do the rest 
         for (size_t i = (size_t)wideI; i < triIndices.size(); ++i)
         {
-            const MapTriKeyType triIndex = triIndices[i];
+            const TriKey triIndex = triIndices[i];
 
             CTRIGRID_ASSERT(triIndex < m_tris.size());
             const TriInfo& info = m_tris[triIndex];
@@ -171,7 +149,7 @@ ClosestTriUniformGrid::FindClosestPointOnTris(
         }
 
 #else
-        for (MapTriKeyType triIndex : triIndices)
+        for (TriKey triIndex : triIndices)
         {
             CTRIGRID_ASSERT(triIndex < m_tris.size());
             const TriInfo& info = m_tris[triIndex];
@@ -195,7 +173,7 @@ ClosestTriUniformGrid::FindClosestPointOnTris(
     float distSqr = std::numeric_limits<float>::max();   // max dist
     for (size_t i = 0; i < triIndices.size(); ++i)
     {
-        const MapTriKeyType triIndex = triIndices[i];
+        const TriKey triIndex = triIndices[i];
         const TriInfo& info = m_tris[triIndex];
         const Bounds& b = triBounds[i];
 
@@ -228,7 +206,7 @@ ClosestTriUniformGrid::FindClosestPointOnTris(
     float distSqr = std::numeric_limits<float>::max();   // max dist
     while (!reader.Finished())
     {
-        const MapTriKeyType triIndex = (MapTriKeyType)reader.Next();
+        const TriKey triIndex = (TriKey)reader.Next();
 
         // run a closest point query
         CTRIGRID_ASSERT(triIndex < m_tris.size());
@@ -268,56 +246,38 @@ ClosestTriUniformGrid::ComputeMemFootprint() const
 
     stats.verticesAllocMem = m_vertices.capacity() * sizeof(Vector3);
     stats.trisAllocMem += m_tris.capacity() * sizeof(TriInfo);
-    stats.cellsAllocMem += m_triCells.capacity() * sizeof(TriCellBucket);
-    stats.cellsAllocMem += m_indexCells.capacity() * sizeof(BitStreamBuffer::BufferIndexType);
+    stats.cellsAllocMem += m_indexCells.capacity() * sizeof(BitStreamBuffer::BufferIndex);
     stats.cellIndicesAllocMem = 0u;
-    for (const TriCellBucket& cell : m_triCells)
-        stats.cellIndicesAllocMem += cell.triIndices.capacity() * sizeof(MapTriKeyType);
     stats.cellIndicesAllocMem += m_indexBitStream.GetSizeInBytes();
 
     return stats;
 }
 
 bool 
-ClosestTriUniformGrid::GetClosestTrisOnCell(MapCellKeyType key, MapTriKeyArrayType& triIndices) const
+ClosestTriUniformGrid::GetClosestTrisOnCell(CellKey key, TriKeyArray& triIndices) const
 {
-    if (key >= (MapCellKeyType)m_indexCells.size())
+    if (key >= (CellKey)m_indexCells.size())
         return false;
 
     triIndices.clear();
 
-    const BitStreamBuffer::BufferIndexType startPos = m_indexCells[key];
-    const BitStreamBuffer::BufferIndexType endPos =
+    const BitStreamBuffer::BufferIndex startPos = m_indexCells[key];
+    const BitStreamBuffer::BufferIndex endPos =
         key + 1u == m_indexCells.size() ? m_lastBitPos : m_indexCells[key + 1u];
 
     BitStreamReader reader(m_indexBitStream, m_indexBitWidth);
     reader.Begin(startPos, endPos);
     while (!reader.Finished())
-        triIndices.push_back((MapTriKeyType)reader.Next());
-
-    return true;
-}
-
-bool
-ClosestTriUniformGrid::GetOverlappingTrisOnCell(MapCellKeyType key, MapTriKeyArrayType& triIndices) const
-{
-    if (key >= (MapCellKeyType)m_triCells.size())
-        return false;
-
-    triIndices.clear();
-
-    const TriCellBucket& bucket = m_triCells[key];
-    for (MapTriKeyType triKey : bucket.triIndices)
-        triIndices.push_back(triKey);
+        triIndices.push_back((TriKey)reader.Next());
 
     return true;
 }
 
 bool 
 ClosestTriUniformGrid::GetTriVerticesWorldSpace(
-    MapTriKeyType triKey, Vector3& v0, Vector3& v1, Vector3& v2) const
+    TriKey triKey, Vector3& v0, Vector3& v1, Vector3& v2) const
 {
-    if (triKey >= (MapTriKeyType)m_tris.size())
+    if (triKey >= (TriKey)m_tris.size())
         return false;
 
     const TriInfo& info = m_tris[triKey];
@@ -334,5 +294,24 @@ ClosestTriUniformGrid::GetTriVerticesWorldSpace(
 
     return true;
 }
+
+void 
+ClosestTriUniformGrid::Clear()
+{
+    m_Nx = 0u;
+    m_Ny = 0u;
+    m_Nz = 0u;
+    m_cellWidth = -1;
+    m_gridBBoxWorldSpace.Reset();
+
+    m_vertices.clear();
+    m_tris.clear();
+
+    m_indexBitWidth = 0u;
+    m_lastBitPos = 0u;
+    m_indexBitStream.Clear();
+    m_indexCells.clear();
+}
+
 
 }
