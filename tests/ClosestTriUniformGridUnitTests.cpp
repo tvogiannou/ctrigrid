@@ -74,7 +74,7 @@ void s_PrintGridZSlice(
 #endif
 
 
-TEST(ClosestTriUniformGridUnitTests, UniformGridTriSpatialMapIndexing)
+TEST(ClosestTriUniformGridUnitTests, UniformGridTriIndexing)
 {
     using namespace ctrigrid;
 
@@ -173,7 +173,7 @@ TEST(ClosestTriUniformGridUnitTests, UniformGridTriSpatialMapIndexing)
     }
 }
 
-TEST(ClosestTriUniformGridUnitTests, UniformGridTriSpatialMapCell)
+TEST(ClosestTriUniformGridUnitTests, UniformGridTriCellKey)
 {
     using namespace ctrigrid;
 
@@ -260,7 +260,7 @@ TEST(ClosestTriUniformGridUnitTests, UniformGridTriSpatialMapCell)
     }
 }
 
-TEST(ClosestTriUniformGridUnitTests, UniformGridTriSpatialMapAddTri)
+TEST(ClosestTriUniformGridUnitTests, UniformGridTriBuilder)
 {
     using namespace ctrigrid;
 
@@ -346,7 +346,7 @@ TEST(ClosestTriUniformGridUnitTests, UniformGridTriSpatialMapAddTri)
 	// TODO: test failure cases
 }
 
-TEST(ClosestTriUniformGridUnitTests, UniformGridTriSpatialMapFinalize)
+TEST(ClosestTriUniformGridUnitTests, UniformGridTriBuilderFinalize)
 {
     using namespace ctrigrid;
 
@@ -425,7 +425,7 @@ TEST(ClosestTriUniformGridUnitTests, UniformGridTriSpatialMapFinalize)
     }
 }
 
-TEST(ClosestTriUniformGridUnitTests, UniformGridTriSpatialMapFindClosestPoint)
+TEST(ClosestTriUniformGridUnitTests, UniformGridTriClosestPoint)
 {
     using namespace ctrigrid;
 
@@ -519,7 +519,7 @@ TEST(ClosestTriUniformGridUnitTests, UniformGridTriSpatialMapFindClosestPoint)
     }
 }
 
-TEST(ClosestTriUniformGridUnitTests, UniformGridTriSpatialMapFindClosestPointRandom)
+TEST(ClosestTriUniformGridUnitTests, UniformGridTriClosestPointRandom)
 {
     using namespace ctrigrid;
 
