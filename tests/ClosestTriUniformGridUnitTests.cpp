@@ -12,23 +12,23 @@
 static 
 void s_CheckStoredTrisInCell(
     const ctrigrid::ClosestTriUniformGrid::CellIndex3& Nxyz,
-    ctrigrid::ClosestTriUniformGrid::MapIndexType i, 
-    ctrigrid::ClosestTriUniformGrid::MapIndexType j, 
-    ctrigrid::ClosestTriUniformGrid::MapIndexType k,
+    ctrigrid::ClosestTriUniformGrid::CellIndex i, 
+    ctrigrid::ClosestTriUniformGrid::CellIndex j, 
+    ctrigrid::ClosestTriUniformGrid::CellIndex k,
     size_t expectedCount,
     std::function<                                                  // function to retrieve the triangles to test againt
-    bool(ctrigrid::ClosestTriUniformGrid::MapCellKeyType key,       // it is different between the grid and the builder
-         ctrigrid::ClosestTriUniformGrid::MapTriKeyArrayType&)> GetTris)
+    bool(ctrigrid::ClosestTriUniformGrid::CellKey key,       // it is different between the grid and the builder
+         ctrigrid::ClosestTriUniformGrid::TriKeyArray&)> GetTris)
 {
     using namespace ctrigrid;
    
-    ClosestTriUniformGrid::MapCellKeyType key;
+    ClosestTriUniformGrid::CellKey key;
 
     bool r = ClosestTriUniformGrid::ComputeCellKeyFromIndex(
                 Nxyz, ClosestTriUniformGrid::ToIndex3(i, j, k), key);
     EXPECT_TRUE(r);
 
-    ClosestTriUniformGrid::MapTriKeyArrayType tris;
+    ClosestTriUniformGrid::TriKeyArray tris;
     r = GetTris(key, tris);    
     EXPECT_TRUE(r);
     
@@ -40,7 +40,7 @@ void s_CheckStoredTrisInCell(
 static
 void s_PrintGridZSlice(
     const ctrigrid::ClosestTriUniformGrid &grid, 
-    ctrigrid::ClosestTriUniformGrid::MapIndexType k)
+    ctrigrid::ClosestTriUniformGrid::CellIndex k)
 {
     using namespace ctrigrid;
 
@@ -50,20 +50,20 @@ void s_PrintGridZSlice(
             grid.GetNumberCellsYAxis(),
             grid.GetNumberCellsZAxis());
 
-    for (ClosestTriUniformGrid::MapIndexType i = 0u; i < grid.GetNumberCellsXAxis(); ++i)
+    for (ClosestTriUniformGrid::CellIndex i = 0u; i < grid.GetNumberCellsXAxis(); ++i)
     {
         for (int64_t j = grid.GetNumberCellsYAxis() - 1u; j >= 0u; --j)
         {
             const ClosestTriUniformGrid::CellIndex3 ijk = 
-                ClosestTriUniformGrid::ToIndex3(i, (ClosestTriUniformGrid::MapIndexType)j, k);
+                ClosestTriUniformGrid::ToIndex3(i, (ClosestTriUniformGrid::CellIndex)j, k);
 
-            ClosestTriUniformGrid::MapCellKeyType cellKey;
+            ClosestTriUniformGrid::CellKey cellKey;
             ClosestTriUniformGrid::ComputeCellKeyFromIndex(Nxyz, ijk, cellKey);
 
             std::cout << "(";
-            ClosestTriUniformGrid::MapTriKeyArrayType tris;
+            ClosestTriUniformGrid::TriKeyArray tris;
             grid.GetClosestTrisOnCell(cellKey, tris);
-            for (ClosestTriUniformGrid::MapTriKeyType t : tris)
+            for (ClosestTriUniformGrid::TriKey t : tris)
                 std::cout << " " << t;
             std::cout << ")\t";
         }
@@ -82,12 +82,12 @@ TEST(ClosestTriUniformGridUnitTests, UniformGridTriSpatialMapIndexing)
 
     // non initialized should fail
     {
-        ClosestTriUniformGrid::MapCellKeyType key;
+        ClosestTriUniformGrid::CellKey key;
         bool r = ClosestTriUniformGrid::ComputeCellKeyFromIndex(
             ClosestTriUniformGrid::ToIndex3(0u, 0u, 0u), ClosestTriUniformGrid::ToIndex3(0u, 0u, 0u), key);
         EXPECT_FALSE(r);
 
-        ClosestTriUniformGrid::MapIndexType i, j, k;
+        ClosestTriUniformGrid::CellIndex i, j, k;
         r = ClosestTriUniformGrid::ComputeIndexFromCellKey(
             ClosestTriUniformGrid::ToIndex3(0u, 0u, 0u), key, i, j, k);
         EXPECT_FALSE(r);
@@ -95,17 +95,17 @@ TEST(ClosestTriUniformGridUnitTests, UniformGridTriSpatialMapIndexing)
 
     // even sizes
     {
-        constexpr ClosestTriUniformGrid::MapCellKeyType Nx = 12u;
-        constexpr ClosestTriUniformGrid::MapCellKeyType Ny = 8u;
-        constexpr ClosestTriUniformGrid::MapCellKeyType Nz = 4u;
+        constexpr ClosestTriUniformGrid::CellKey Nx = 12u;
+        constexpr ClosestTriUniformGrid::CellKey Ny = 8u;
+        constexpr ClosestTriUniformGrid::CellKey Nz = 4u;
         const ClosestTriUniformGrid::CellIndex3 N = ClosestTriUniformGrid::ToIndex3(Nx, Ny, Nz);
 
-        ClosestTriUniformGrid::MapCellKeyType key;
-        for (ClosestTriUniformGrid::MapIndexType i = 0u; i < Nx; ++i)
+        ClosestTriUniformGrid::CellKey key;
+        for (ClosestTriUniformGrid::CellIndex i = 0u; i < Nx; ++i)
         {
-            for (ClosestTriUniformGrid::MapIndexType j = 0u; j < Ny; ++j)
+            for (ClosestTriUniformGrid::CellIndex j = 0u; j < Ny; ++j)
             {
-                for (ClosestTriUniformGrid::MapIndexType k = 0u; k < Nz; ++k)
+                for (ClosestTriUniformGrid::CellIndex k = 0u; k < Nz; ++k)
                 {
                     const ClosestTriUniformGrid::CellIndex3 ijk = 
                                 ClosestTriUniformGrid::ToIndex3(i, j, k);
@@ -113,7 +113,7 @@ TEST(ClosestTriUniformGridUnitTests, UniformGridTriSpatialMapIndexing)
                     bool r = ClosestTriUniformGrid::ComputeCellKeyFromIndex(N, ijk, key);
                     EXPECT_TRUE(r);
 
-                    ClosestTriUniformGrid::MapIndexType i_, j_, k_;
+                    ClosestTriUniformGrid::CellIndex i_, j_, k_;
                     r = ClosestTriUniformGrid::ComputeIndexFromCellKey(N, key, i_, j_, k_);
                     EXPECT_TRUE(r);
                     EXPECT_EQ(i, i_);
@@ -134,17 +134,17 @@ TEST(ClosestTriUniformGridUnitTests, UniformGridTriSpatialMapIndexing)
 
     // odd sizes
     {
-        const ClosestTriUniformGrid::MapCellKeyType Nx = 13u;
-        const ClosestTriUniformGrid::MapCellKeyType Ny = 7u;
-        const ClosestTriUniformGrid::MapCellKeyType Nz = 5u;
+        const ClosestTriUniformGrid::CellKey Nx = 13u;
+        const ClosestTriUniformGrid::CellKey Ny = 7u;
+        const ClosestTriUniformGrid::CellKey Nz = 5u;
         const ClosestTriUniformGrid::CellIndex3 N = ClosestTriUniformGrid::ToIndex3(Nx, Ny, Nz);
 
-        ClosestTriUniformGrid::MapCellKeyType key;
-        for (ClosestTriUniformGrid::MapIndexType i = 0u; i < Nx; ++i)
+        ClosestTriUniformGrid::CellKey key;
+        for (ClosestTriUniformGrid::CellIndex i = 0u; i < Nx; ++i)
         {
-            for (ClosestTriUniformGrid::MapIndexType j = 0u; j < Ny; ++j)
+            for (ClosestTriUniformGrid::CellIndex j = 0u; j < Ny; ++j)
             {
-                for (ClosestTriUniformGrid::MapIndexType k = 0u; k < Nz; ++k)
+                for (ClosestTriUniformGrid::CellIndex k = 0u; k < Nz; ++k)
                 {
                     const ClosestTriUniformGrid::CellIndex3 ijk =
                                 ClosestTriUniformGrid::ToIndex3(i, j, k);
@@ -153,7 +153,7 @@ TEST(ClosestTriUniformGridUnitTests, UniformGridTriSpatialMapIndexing)
                     bool r = ClosestTriUniformGrid::ComputeCellKeyFromIndex(N, ijk, key);
                     EXPECT_TRUE(r);
 
-                    ClosestTriUniformGrid::MapIndexType i_, j_, k_;
+                    ClosestTriUniformGrid::CellIndex i_, j_, k_;
                     r = ClosestTriUniformGrid::ComputeIndexFromCellKey(N, key, i_, j_, k_);
                     EXPECT_TRUE(r);
                     EXPECT_EQ(i, i_);
@@ -178,9 +178,9 @@ TEST(ClosestTriUniformGridUnitTests, UniformGridTriSpatialMapCell)
     using namespace ctrigrid;
 
     // test grid properties
-    const ClosestTriUniformGrid::MapCellKeyType Nx = 4u;
-    const ClosestTriUniformGrid::MapCellKeyType Ny = 4u;
-    const ClosestTriUniformGrid::MapCellKeyType Nz = 4u;
+    const ClosestTriUniformGrid::CellKey Nx = 4u;
+    const ClosestTriUniformGrid::CellKey Ny = 4u;
+    const ClosestTriUniformGrid::CellKey Nz = 4u;
     const float cellWidth = 2.f;
     const Vector3 origin = Vector3::UNARY;
 
@@ -192,7 +192,7 @@ TEST(ClosestTriUniformGridUnitTests, UniformGridTriSpatialMapCell)
         bool r = builder.ComputeCelBBoxWorldSpace(0u, 0u, 0u, bbox);
         EXPECT_FALSE(r);
 
-        ClosestTriUniformGrid::StructureInfo info = { Nx, Ny, Nz, origin, cellWidth };
+        ClosestTriUniformGrid::Builder::InitInfo info = { Nx, Ny, Nz, origin, cellWidth };
         
         r = builder.Init(info);
         EXPECT_TRUE(r);
@@ -206,7 +206,7 @@ TEST(ClosestTriUniformGridUnitTests, UniformGridTriSpatialMapCell)
             Vector3(8.f, 8.f, 8.f)
         };
 
-        ClosestTriUniformGrid::MapCellKeyType key;
+        ClosestTriUniformGrid::CellKey key;
         bool r = ClosestTriUniformGrid::ComputeCellKeyFromPoint(
             builder.Nxyz, cellWidth, builder.m_gridBBoxWorldSpace, pointsInside[0], key);
         EXPECT_TRUE(r);
@@ -267,9 +267,9 @@ TEST(ClosestTriUniformGridUnitTests, UniformGridTriSpatialMapAddTri)
     ClosestTriUniformGrid::Builder builder;
 
     // grid params
-    const ClosestTriUniformGrid::MapCellKeyType Nx = 5u;
-    const ClosestTriUniformGrid::MapCellKeyType Ny = 5u;
-    const ClosestTriUniformGrid::MapCellKeyType Nz = 5u;
+    const ClosestTriUniformGrid::CellKey Nx = 5u;
+    const ClosestTriUniformGrid::CellKey Ny = 5u;
+    const ClosestTriUniformGrid::CellKey Nz = 5u;
     const float cellWidth = 2.f;
     const Vector3 origin = Vector3::UNARY;
 
@@ -289,7 +289,7 @@ TEST(ClosestTriUniformGridUnitTests, UniformGridTriSpatialMapAddTri)
 
     // create grid and add tris
     {
-        ClosestTriUniformGrid::StructureInfo info = { Nx, Ny, Nz, origin, cellWidth };
+        ClosestTriUniformGrid::Builder::InitInfo info = { Nx, Ny, Nz, origin, cellWidth };
         bool r = builder.Init(info);
         EXPECT_TRUE(r);
 
@@ -353,9 +353,9 @@ TEST(ClosestTriUniformGridUnitTests, UniformGridTriSpatialMapFinalize)
     ClosestTriUniformGrid grid;
 
     // grid params
-    const ClosestTriUniformGrid::MapCellKeyType Nx = 5u;
-    const ClosestTriUniformGrid::MapCellKeyType Ny = 5u;
-    const ClosestTriUniformGrid::MapCellKeyType Nz = 5u;
+    const ClosestTriUniformGrid::CellKey Nx = 5u;
+    const ClosestTriUniformGrid::CellKey Ny = 5u;
+    const ClosestTriUniformGrid::CellKey Nz = 5u;
     const float cellWidth = 2.f;
     const Vector3 origin = Vector3::UNARY;
 
@@ -377,7 +377,7 @@ TEST(ClosestTriUniformGridUnitTests, UniformGridTriSpatialMapFinalize)
 
     // create grid and add tris
     {
-        ClosestTriUniformGrid::StructureInfo info = { Nx, Ny, Nz, origin, cellWidth };
+        ClosestTriUniformGrid::Builder::InitInfo info = { Nx, Ny, Nz, origin, cellWidth };
         ClosestTriUniformGrid::Builder builder;
         bool r = builder.Init(info);
         EXPECT_TRUE(r);
@@ -434,9 +434,9 @@ TEST(ClosestTriUniformGridUnitTests, UniformGridTriSpatialMapFindClosestPoint)
     const float tolerance = 1.e3f;  // use since the sse version of closest point-tri query
 
     // grid params
-    const ClosestTriUniformGrid::MapCellKeyType Nx = 5u;
-    const ClosestTriUniformGrid::MapCellKeyType Ny = 5u;
-    const ClosestTriUniformGrid::MapCellKeyType Nz = 5u;
+    const ClosestTriUniformGrid::CellKey Nx = 5u;
+    const ClosestTriUniformGrid::CellKey Ny = 5u;
+    const ClosestTriUniformGrid::CellKey Nz = 5u;
     const float cellWidth = 2.f;
     const Vector3 origin = Vector3::UNARY;
 
@@ -458,7 +458,7 @@ TEST(ClosestTriUniformGridUnitTests, UniformGridTriSpatialMapFindClosestPoint)
 
     // create grid and add tris
     {
-        ClosestTriUniformGrid::StructureInfo info = { Nx, Ny, Nz, origin, cellWidth };
+        ClosestTriUniformGrid::Builder::InitInfo info = { Nx, Ny, Nz, origin, cellWidth };
         ClosestTriUniformGrid::Builder builder;
         bool r = builder.Init(info);
         EXPECT_TRUE(r);
@@ -480,7 +480,7 @@ TEST(ClosestTriUniformGridUnitTests, UniformGridTriSpatialMapFindClosestPoint)
         const Vector3 p2(6.f, 6.f, 6.f);
 
         Vector3 closestPoint;
-        ClosestTriUniformGrid::MapTriKeyType triKey;
+        ClosestTriUniformGrid::TriKey triKey;
 
         bool r = grid.FindClosestPointOnTris(p0, closestPoint, triKey); EXPECT_TRUE(r);
         EXPECT_EQ(triKey, 0u);
@@ -500,7 +500,7 @@ TEST(ClosestTriUniformGridUnitTests, UniformGridTriSpatialMapFindClosestPoint)
         const Vector3 p0(11.5f, 11.5f, 11.5f);
 
         Vector3 closestPoint;
-        ClosestTriUniformGrid::MapTriKeyType triKey;
+        ClosestTriUniformGrid::TriKey triKey;
 
         // by default, points outside the grid are being ignored
         bool r = grid.FindClosestPointOnTris(Vector3::ZERO, closestPoint, triKey);
@@ -568,9 +568,9 @@ TEST(ClosestTriUniformGridUnitTests, UniformGridTriSpatialMapFindClosestPointRan
     ClosestTriUniformGrid grid;
 
     // grid params
-    const ClosestTriUniformGrid::MapCellKeyType Nx = 8u;
-    const ClosestTriUniformGrid::MapCellKeyType Ny = 8u;
-    const ClosestTriUniformGrid::MapCellKeyType Nz = 8u;
+    const ClosestTriUniformGrid::CellKey Nx = 8u;
+    const ClosestTriUniformGrid::CellKey Ny = 8u;
+    const ClosestTriUniformGrid::CellKey Nz = 8u;
     const float cellWidth = 1.f;
     Vector3 origin = c;
     origin.Sub(Vector3::UNARY);
@@ -578,7 +578,7 @@ TEST(ClosestTriUniformGridUnitTests, UniformGridTriSpatialMapFindClosestPointRan
 
     // create grid and add tris
     {
-        ClosestTriUniformGrid::StructureInfo info = { Nx, Ny, Nz, origin, cellWidth };
+        ClosestTriUniformGrid::Builder::InitInfo info = { Nx, Ny, Nz, origin, cellWidth };
         ClosestTriUniformGrid::Builder builder;
         bool r = builder.Init(info);
         EXPECT_TRUE(r);
@@ -649,7 +649,7 @@ TEST(ClosestTriUniformGridUnitTests, UniformGridTriSpatialMapFindClosestPointRan
     for (size_t i = 0; i < points.size(); i++)
     {
         Vector3 cp;
-        ClosestTriUniformGrid::MapTriKeyType triKey;
+        ClosestTriUniformGrid::TriKey triKey;
         bool r = grid.FindClosestPointOnTris(points[i], cp, triKey);
 
         const Vector3& expectedCP = closestPoints[i];

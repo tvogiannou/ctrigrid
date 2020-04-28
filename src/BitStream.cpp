@@ -15,7 +15,7 @@ BitStreamReader::BitStreamReader(const BitStreamBuffer& streamBuffer, uint8_t wi
 }
 
 void 
-BitStreamReader::Begin(BitStreamBuffer::BufferIndexType startBitPos, BitStreamBuffer::BufferIndexType endBitPos)
+BitStreamReader::Begin(BitStreamBuffer::BufferIndex startBitPos, BitStreamBuffer::BufferIndex endBitPos)
 {
     CTRIGRID_ASSERT (endBitPos > startBitPos);
 

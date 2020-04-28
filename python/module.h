@@ -43,7 +43,7 @@ struct CTRIGRID_UniformGrid_wrapper
     std::tuple<pybind11::array_t<float>, pybind11::array_t<uint32_t>> 
         FindAllClosestPointsOnTris(pybind11::array_t<float> points, bool forceInGrid = false) const;
 
-    ctrigrid::ClosestTriUniformGrid::StructureInfo info;
+    ctrigrid::ClosestTriUniformGrid::Builder::InitInfo info;
     ctrigrid::ClosestTriUniformGrid grid;
 
     // non-copyable

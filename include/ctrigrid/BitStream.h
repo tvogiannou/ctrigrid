@@ -8,9 +8,12 @@
 namespace ctrigrid
 {
 
+// utility struct to wrap a "raw" byte buffer
 struct BitStreamBuffer
 {
-    using BufferIndexType = uint64_t;
+    using BufferIndex = uint64_t;
+    using BufferData = std::vector<uint8_t>;
+    using BufferIndexArray = std::vector<uint64_t>;
 
     // API that needs to be supported by the bit stream
     // for the moment it simply forwards to a std vector
@@ -30,10 +33,11 @@ struct BitStreamBuffer
     void Pack() { m_data.shrink_to_fit(); }
     void SetByteValue(size_t bytePos, uint8_t val) { m_data.at(bytePos) = val; }
 
-private:
-    std::vector<uint8_t> m_data;
+
+    BufferData m_data;
 };
 
+// reads a BitStreamBuffer at specified bit width values
 class BitStreamReader
 {
 public:
@@ -46,16 +50,17 @@ public:
     const BitStreamBuffer& m_streamBuffer;
     const uint8_t m_width;
 
-    void Begin(BitStreamBuffer::BufferIndexType startBitPos, BitStreamBuffer::BufferIndexType endBitPos);
+    void Begin(BitStreamBuffer::BufferIndex startBitPos, BitStreamBuffer::BufferIndex endBitPos);
     ReadType Next();
     bool Finished() const { return m_startBitPos >= m_endBitPos; }
 
 private:
 
-    BitStreamBuffer::BufferIndexType m_startBitPos;
-    BitStreamBuffer::BufferIndexType m_endBitPos;
+    BitStreamBuffer::BufferIndex m_startBitPos;
+    BitStreamBuffer::BufferIndex m_endBitPos;
 };
 
+// writes a BitStreamBuffer at specified bit width values
 class BitStreamWriter
 {
 public:
@@ -68,12 +73,12 @@ public:
     void Begin(size_t totalSizeBytes);
     void WriteNext(WriteType value);
     void Finalize();
-    BitStreamBuffer::BufferIndexType GetCurrentWritePos() const { return m_writeBitPos; }
+    BitStreamBuffer::BufferIndex GetCurrentWritePos() const { return m_writeBitPos; }
 
 private:
 
     BitStreamBuffer& m_streamBuffer;
-    BitStreamBuffer::BufferIndexType m_writeBitPos = 0u;
+    BitStreamBuffer::BufferIndex m_writeBitPos = 0u;
 };
 
 

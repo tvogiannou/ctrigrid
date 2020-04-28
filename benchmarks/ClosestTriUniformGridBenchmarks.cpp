@@ -134,7 +134,7 @@ BM_UniformGridTriSpatialMapClosestPointQuerySinglePoint(benchmark::State& state)
         s_createSphereMesh(Nsphere, Nsphere, vertices, indices);
 
         ClosestTriUniformGrid::Builder builder;
-        ClosestTriUniformGrid::StructureInfo info;
+        ClosestTriUniformGrid::Builder::InitInfo info;
         info.Nx = Ngrid;
         info.Ny = Ngrid;
         info.Nz = Ngrid;
@@ -149,7 +149,7 @@ BM_UniformGridTriSpatialMapClosestPointQuerySinglePoint(benchmark::State& state)
 
     const Vector3 p = Vector3::UNARY;
     Vector3 cp;
-    ClosestTriUniformGrid::MapTriKeyType triKey;
+    ClosestTriUniformGrid::TriKey triKey;
 
     for (auto _ : state)
         grid.FindClosestPointOnTris(p, cp, triKey);
@@ -184,7 +184,7 @@ BM_UniformGridTriSpatialMapClosestPointQueryMultiplePoints(benchmark::State& sta
         s_createSphereMesh(Nsphere, Nsphere, vertices, indices);
 
         ClosestTriUniformGrid::Builder builder;
-        ClosestTriUniformGrid::StructureInfo info;
+        ClosestTriUniformGrid::Builder::InitInfo info;
         info.Nx = Ngrid;
         info.Ny = Ngrid;
         info.Nz = Ngrid;
@@ -221,7 +221,7 @@ BM_UniformGridTriSpatialMapClosestPointQueryMultiplePoints(benchmark::State& sta
     }
 
     Vector3 cp;
-    ClosestTriUniformGrid::MapTriKeyType triKey;
+    ClosestTriUniformGrid::TriKey triKey;
 
     for (auto _ : state)
     {

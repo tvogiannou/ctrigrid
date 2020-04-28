@@ -64,7 +64,7 @@ CTRIGRID_UniformGrid_wrapper::FindClosestPointOnTris(const CTRIGRID_Vector3_wrap
     const ctrigrid::Vector3 _p = p.ToVector3();
 
     ctrigrid::Vector3 _closestPoint;
-    ctrigrid::ClosestTriUniformGrid::MapTriKeyType triKey;
+    ctrigrid::ClosestTriUniformGrid::TriKey triKey;
     if(!grid.FindClosestPointOnTris(_p, _closestPoint, triKey))
         throw std::runtime_error("Grid FindClosestPointOnTris failed: internal error");
 
@@ -105,7 +105,7 @@ CTRIGRID_UniformGrid_wrapper::FindAllClosestPointsOnTris(pybind11::array_t<float
             const ctrigrid::Vector3 p(pts[i], pts[i + 1], pts[i + 2]);
 
             ctrigrid::Vector3 _closestPoint;
-            ctrigrid::ClosestTriUniformGrid::MapTriKeyType triKey;
+            ctrigrid::ClosestTriUniformGrid::TriKey triKey;
             //bool forceInGrid = false;
             if (!grid.FindClosestPointOnTris(p, _closestPoint, triKey, forceInGrid))
                 throw std::runtime_error("Grid FindClosestPointOnTris failed: internal error");
