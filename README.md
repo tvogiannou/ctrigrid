@@ -85,22 +85,25 @@ cmake --build .
 #include <ctrigrid/ClosestTriUniformGrid.h>
 
 
-// initialize grid
+// initialize a grid builder
 citrgrid::ClosestTriUniformGrid::CellKey Nx = ...    // Number of cells along X axis
 citrgrid::ClosestTriUniformGrid::CellKey Ny = ...    // Number of cells along Y axis
 citrgrid::ClosestTriUniformGrid::CellKey Nz = ...    // Number of cells along Z axis
-float cellWidth = ...                                       // Width of the cell, size is the same along all dimensions
-Vector3 origin = ...                                        // Origin of the grid in world space, i.e. cell at index (0, 0, 0) 
-citrgrid::ClosestTriUniformGrid grid;
+float cellWidth = ...                                // Width of the cell, size is the same along all dimensions
+Vector3 origin = ...                                 // Origin of the grid in world space, i.e. cell at index (0, 0, 0) 
+citrgrid::ClosestTriUniformGrid::Builder builder;
 citrgrid::ClosestTriUniformGrid::Builder::InitInfo info = { Nx, Ny, Nz, origin, cellWidth };
-grid.Init(info);
+builder.Init(info);
 
 // construct from a triangle mesh
 std::vector<float> vertices = ...       // flattened array of floats with the x,y,z coordinates of the mesh vertices
 std::vector<uint32_t> indices = ...     // flattened array of uint32 with the triplets of each triangle vertex
-grid.BeginGridSetup();
-grid.AddTriMesh(vertices, indices);
-grid.FinalizeGridSetup();
+builder.BeginGridSetup();
+builder.AddTriMesh(vertices, indices);
+
+// create a grid from the builder
+citrgrid::ClosestTriUniformGrid grid;
+builder.FinalizeGridSetup(grid);   // data ownership is passed from the builder to the grid, builder is cleared
 
 // query a point
 citrgrid::Vector3 testPoint = ...                       // some test point
