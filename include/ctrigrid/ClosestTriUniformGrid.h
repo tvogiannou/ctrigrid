@@ -93,7 +93,8 @@ public:
         // grid construction
         bool BeginGridSetup();
 
-        // positions and indices are flattened buffers of vertex data, both expected to have sizes that are multiples of 3
+        // positions and indices are flattened buffers of vertex data 
+        // both expected to have sizes that are multiples of 3
         // NOTE: adding multiple meshes is not supported at the moment!
         bool AddTriMesh(const std::vector<float>& positions, const std::vector<uint32_t>& indices);
         
@@ -127,14 +128,12 @@ public:
 
 
     // queries
-
     // returns the full list of triangles that are "closest" to the cell with the input key
     // closest in this context means that any other triangle cannot be closer to the cell than one (or more) in the list
     // in practice, this is the list of triangles that will be evaluated during a distance query
     // triIndices refer to the grid triangle list 
     bool GetClosestTrisOnCell(CellKey key, TriKeyArray& triIndices) const;
     bool GetTriVerticesWorldSpace(TriKey triKey, Vector3& v0, Vector3& v1, Vector3& v2) const;
-
     // find the closest point to p and the respective tri key
     // forceInGrid can be set to only look perform the query if p lies in the grid, if set to false then
     // the query is using the closest cell to p instead which is just an approximation and 

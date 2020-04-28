@@ -1,5 +1,4 @@
 
-
 #include <ctrigrid/ClosestTriUniformGrid.h>
 
 #include <ctrigrid/Compiler.h>
@@ -15,30 +14,6 @@
 
 namespace ctrigrid
 {
-
-bool 
-ClosestTriUniformGrid::ComputeCellKeyFromPoint(
-    const CellIndex3& Nxyz, float cellWidth, const AxisAlignedBoundingBox& gridBox,
-    const Vector3& point, CellKey& key)
-{
-    if (!gridBox.Contains(point))
-        return false;
-
-    // transform to grid space
-    Vector3 c = point;
-    c.Sub(gridBox.min);
-
-    // compute indices
-    CellIndex i, j, k;
-    if (!ComputeIndexFromPointGridSpace(cellWidth, c, i, j, k))
-        return false;
-
-    // compute key
-    if (!ComputeCellKeyFromIndex(Nxyz, ToIndex3(i, j, k), key))
-        return false;
-
-    return true;
-}
 
 bool 
 ClosestTriUniformGrid::FindClosestPointOnTris(
