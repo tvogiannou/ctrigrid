@@ -50,15 +50,15 @@ public:
 
     // indexing & cell methods
     static bool ComputeCellKeyFromIndex(
-        CellIndex3 Nxyz, CellIndex3 ijk, CellKey& key);
+        const CellIndex3& Nxyz, const CellIndex3& ijk, CellKey& key);
     static bool ComputeIndexFromCellKey(
-        CellIndex3 Nxyz, CellKey key, 
+        const CellIndex3& Nxyz, CellKey key, 
         CellIndex& i, CellIndex& j, CellIndex& k);
     static bool ComputeIndexFromPointGridSpace(
         float cellWidth, const Vector3& point, 
         CellIndex& i, CellIndex& j, CellIndex& k);
     static bool ComputeCellKeyFromPoint(
-        CellIndex3 Nxyz, float cellWidth, const AxisAlignedBoundingBox& gridBox,
+        const CellIndex3& Nxyz, float cellWidth, const AxisAlignedBoundingBox& gridBox,
         const Vector3& point, CellKey& key);
 
 

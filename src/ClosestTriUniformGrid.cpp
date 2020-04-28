@@ -18,7 +18,7 @@ namespace ctrigrid
 
 bool 
 ClosestTriUniformGrid::ComputeCellKeyFromPoint(
-    CellIndex3 Nxyz, float cellWidth, const AxisAlignedBoundingBox& gridBox,
+    const CellIndex3& Nxyz, float cellWidth, const AxisAlignedBoundingBox& gridBox,
     const Vector3& point, CellKey& key)
 {
     if (!gridBox.Contains(point))
