@@ -26,7 +26,7 @@ Closest Triangle (Regular) Grid
 
 ### Overview
 
-ctrigrid is a library implementing method(s) for computing the closest distance git cbetween points and an arbitrary [triangle mesh (triangle soup)](https://en.wikipedia.org/wiki/Polygon_soup).
+ctrigrid is a library implementing method(s) for computing the closest distance between points and an arbitrary [triangle mesh (triangle soup)](https://en.wikipedia.org/wiki/Polygon_soup).
 The algorithm employs a [regular grid](https://en.wikipedia.org/wiki/Regular_grid) where each cell stores a list of triangles that are candidates to be the closest ones in the triangle mesh, i.e. all other triangles cannot be closest to any point inside the cell. The core idea behind this approach is that the grid works as a spatial map of the mesh [distance function](https://en.wikipedia.org/wiki/Signed_distance_function), which guarantees the continuity of the function by storing indices to triangles (instead of sampled distance values).  
 
 ### Build Instructions
