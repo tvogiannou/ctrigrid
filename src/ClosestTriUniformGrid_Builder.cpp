@@ -8,6 +8,75 @@
 namespace ctrigrid
 {
 
+static void 
+CreateTriInfoFromTriIndices(
+    const ClosestTriUniformGrid::Builder& builder,
+    ClosestTriUniformGrid::TriKey idx0, 
+    ClosestTriUniformGrid::TriKey idx1, 
+    ClosestTriUniformGrid::TriKey idx2, 
+    ClosestTriUniformGrid::TriInfo& info)
+{
+    info.idx0 = idx0;
+    info.idx1 = idx1;
+    info.idx2 = idx2;
+
+    // compute bounding sphere
+    {
+        CTRIGRID_ASSERT(info.idx0 < builder.vertices.size());
+        CTRIGRID_ASSERT(info.idx1 < builder.vertices.size());
+        CTRIGRID_ASSERT(info.idx2 < builder.vertices.size());
+
+        const Vector3& v0 = builder.vertices[info.idx0];
+        const Vector3& v1 = builder.vertices[info.idx1];
+        const Vector3& v2 = builder.vertices[info.idx2];
+
+        // TODO: improve this by computing smaller sphere
+        // centroid for center
+        info.sphereCenter = v0;
+        info.sphereCenter.Add(v1);
+        info.sphereCenter.Add(v2);
+        info.sphereCenter.Mul(1.f / 3.f);
+
+        Vector3 d = v0;
+        d.Sub(info.sphereCenter);
+        const float d0 = d.Dot(d);
+
+        d = v1;
+        d.Sub(info.sphereCenter);
+        const float d1 = d.Dot(d);
+
+        d = v2;
+        d.Sub(info.sphereCenter);
+        const float d2 = d.Dot(d);
+
+        info.sphereRadius = sqrtf(std::max({ d0, d1, d2 }));
+    }
+}
+
+static ClosestTriUniformGrid::CellKey 
+AddTriInfo(
+    ClosestTriUniformGrid::Builder& builder,
+    const ClosestTriUniformGrid::TriInfo& info)
+{
+    builder.tris.emplace_back(info);
+
+    return (ClosestTriUniformGrid::CellKey)(builder.tris.size() - 1u);
+}
+
+static void 
+AddTriToBucket(
+    ClosestTriUniformGrid::Builder& builder,
+    ClosestTriUniformGrid::CellKey cellKey, 
+    ClosestTriUniformGrid::TriKey triKey)
+{
+    ClosestTriUniformGrid::Builder::TriCellBucket& bucket = 
+                                builder.triCells.at(cellKey);
+
+    // TODO: keep sorted to optimize search
+    if (std::find(bucket.triIndices.begin(), bucket.triIndices.end(), triKey) == bucket.triIndices.end())
+        bucket.triIndices.push_back(triKey);
+}
+
 // Helper representing the border of a region ("shell") in the grid
 // TODO: change this so it keeps tracks the cells that have been checked while expanding
 struct GridBorderRegionHelper
@@ -210,13 +279,13 @@ ClosestTriUniformGrid::Builder::Clear()
 
     tris.clear();
     vertices.clear();
-    m_triCells.clear();
+    triCells.clear();
 }
 
 bool 
 ClosestTriUniformGrid::Builder::BeginGridSetup()
 {
-    if (!vertices.empty() || !tris.empty() || !m_triCells.empty())
+    if (!vertices.empty() || !tris.empty() || !triCells.empty())
         return false;
 
     CellIndex Nx, Ny, Nz;
@@ -224,7 +293,7 @@ ClosestTriUniformGrid::Builder::BeginGridSetup()
     if (Nx == 0u || Ny == 0u || Nz == 0u)
         return false;
 
-    m_triCells.resize(Nx * Ny * Nz);
+    triCells.resize(Nx * Ny * Nz);
 
     return true;
 }
@@ -232,7 +301,7 @@ ClosestTriUniformGrid::Builder::BeginGridSetup()
 bool 
 ClosestTriUniformGrid::Builder::FinalizeGridSetup(ClosestTriUniformGrid& grid)
 {
-    if (tris.empty() || m_triCells.empty())
+    if (tris.empty() || triCells.empty())
         return false;
 
     grid.Clear();
@@ -268,7 +337,7 @@ ClosestTriUniformGrid::Builder::FinalizeGridSetup(ClosestTriUniformGrid& grid)
                     Nxyz, ClosestTriUniformGrid::ToIndex3(i, j, k), cellKey))
                     return false;
 
-                TriKeyArray cellTris;// = m_triCells.at(cellKey).triIndices;
+                TriKeyArray cellTris;// = triCells.at(cellKey).triIndices;
 
                 // look through the region by expanding it while there are no tris found
                 GridBorderRegionHelper testRegion(grid.m_Nx, grid.m_Ny, grid.m_Nz);
@@ -282,7 +351,7 @@ ClosestTriUniformGrid::Builder::FinalizeGridSetup(ClosestTriUniformGrid& grid)
 
                     for (CellKey regionKey : cellRegionKeys)
                     {
-                        const TriKeyArray& origTriIndices = m_triCells.at(regionKey).triIndices;
+                        const TriKeyArray& origTriIndices = triCells.at(regionKey).triIndices;
                         if (!origTriIndices.empty())
                         {
                             found = true;
@@ -309,7 +378,7 @@ ClosestTriUniformGrid::Builder::FinalizeGridSetup(ClosestTriUniformGrid& grid)
 
                     for (CellKey regionKey : cellRegionKeys)
                     {
-                        const TriKeyArray& origTriIndices = m_triCells.at(regionKey).triIndices;
+                        const TriKeyArray& origTriIndices = triCells.at(regionKey).triIndices;
                         if (!origTriIndices.empty())
                         {
                             found = true;
@@ -341,8 +410,8 @@ ClosestTriUniformGrid::Builder::FinalizeGridSetup(ClosestTriUniformGrid& grid)
     }
 
     // clear temp data
-    m_triCells.clear();
-    // m_triCells.shrink_to_fit();
+    triCells.clear();
+    // triCells.shrink_to_fit();
 
     // finalize the bit stream
     grid.m_lastBitPos = writer.GetCurrentWritePos();
@@ -398,8 +467,8 @@ ClosestTriUniformGrid::Builder::AddTriMesh(
         const uint32_t idx2 = indices[triv + 2];
 
         TriInfo info;
-        CreateTriInfoFromTriIndices(idx0, idx1, idx2, info);
-        TriKey triKey = AddTriInfo(info);
+        CreateTriInfoFromTriIndices(*this, idx0, idx1, idx2, info);
+        TriKey triKey = AddTriInfo(*this, info);
 
         // get vertices for the tri
         const Vector3& v0 = vertices[idx0];
@@ -440,7 +509,7 @@ ClosestTriUniformGrid::Builder::AddTriMesh(
                             Nxyz, ClosestTriUniformGrid::ToIndex3(i, j, k), cellKey))
                             return false;
 
-                        AddTriToBucket(cellKey, triKey);
+                        AddTriToBucket(*this, cellKey, triKey);
                     }
                 }
             }
@@ -451,74 +520,15 @@ ClosestTriUniformGrid::Builder::AddTriMesh(
     return true;
 }
 
-void 
-ClosestTriUniformGrid::Builder::CreateTriInfoFromTriIndices(
-    TriKey idx0, TriKey idx1, TriKey idx2, TriInfo& info)
-{
-    info.idx0 = idx0;
-    info.idx1 = idx1;
-    info.idx2 = idx2;
-
-    // compute bounding sphere
-    {
-        CTRIGRID_ASSERT(info.idx0 < vertices.size());
-        CTRIGRID_ASSERT(info.idx1 < vertices.size());
-        CTRIGRID_ASSERT(info.idx2 < vertices.size());
-
-        const Vector3& v0 = vertices[info.idx0];
-        const Vector3& v1 = vertices[info.idx1];
-        const Vector3& v2 = vertices[info.idx2];
-
-        // TODO: improve this by computing smaller sphere
-        // centroid for center
-        info.sphereCenter = v0;
-        info.sphereCenter.Add(v1);
-        info.sphereCenter.Add(v2);
-        info.sphereCenter.Mul(1.f / 3.f);
-
-        Vector3 d = v0;
-        d.Sub(info.sphereCenter);
-        const float d0 = d.Dot(d);
-
-        d = v1;
-        d.Sub(info.sphereCenter);
-        const float d1 = d.Dot(d);
-
-        d = v2;
-        d.Sub(info.sphereCenter);
-        const float d2 = d.Dot(d);
-
-        info.sphereRadius = sqrtf(std::max({ d0, d1, d2 }));
-    }
-}
-
-ClosestTriUniformGrid::CellKey 
-ClosestTriUniformGrid::Builder::AddTriInfo(const TriInfo& info)
-{
-    tris.emplace_back(info);
-
-    return (ClosestTriUniformGrid::CellKey)(tris.size() - 1u);
-}
-
-void 
-ClosestTriUniformGrid::Builder::AddTriToBucket(CellKey cellKey, TriKey triKey)
-{
-    TriCellBucket& bucket = m_triCells.at(cellKey);
-
-    // TODO: keep sorted to optimize search
-    if (std::find(bucket.triIndices.begin(), bucket.triIndices.end(), triKey) == bucket.triIndices.end())
-        bucket.triIndices.push_back(triKey);
-}
-
 bool
 ClosestTriUniformGrid::Builder::GetOverlappingTrisOnCell(CellKey key, TriKeyArray& triIndices) const
 {
-    if (key >= (CellKey)m_triCells.size())
+    if (key >= (CellKey)triCells.size())
         return false;
 
     triIndices.clear();
 
-    const TriCellBucket& bucket = m_triCells[key];
+    const TriCellBucket& bucket = triCells[key];
     for (TriKey triKey : bucket.triIndices)
         triIndices.push_back(triKey);
 

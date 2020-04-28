@@ -51,7 +51,6 @@ ClosestTriUniformGrid::FindClosestPointOnTris(
     localP.Sub(m_gridBBoxWorldSpace.min);
 
     CTRIGRID_ASSERT(cellKey < m_indexCells.size());
-    //const TriKeyArray& tris = m_triCells[cellKey].triIndices;
     const BitStreamBuffer::BufferIndex startPos = m_indexCells[cellKey];
     const BitStreamBuffer::BufferIndex endPos = 
         cellKey + 1u == m_indexCells.size() ? m_lastBitPos : m_indexCells[cellKey + 1u];
@@ -247,11 +246,8 @@ ClosestTriUniformGrid::ComputeMemFootprint() const
 
     stats.verticesAllocMem = m_vertices.capacity() * sizeof(Vector3);
     stats.trisAllocMem += m_tris.capacity() * sizeof(TriInfo);
-    // stats.cellsAllocMem += m_triCells.capacity() * sizeof(TriCellBucket);
     stats.cellsAllocMem += m_indexCells.capacity() * sizeof(BitStreamBuffer::BufferIndex);
     stats.cellIndicesAllocMem = 0u;
-    // for (const TriCellBucket& cell : m_triCells)
-        // stats.cellIndicesAllocMem += cell.triIndices.capacity() * sizeof(TriKey);
     stats.cellIndicesAllocMem += m_indexBitStream.GetSizeInBytes();
 
     return stats;

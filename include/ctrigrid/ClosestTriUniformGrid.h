@@ -43,12 +43,11 @@ public:
 
         // TODO: add face normal, side normals, etc
     };
-
     using TriInfoArrayType = std::vector<TriInfo>;
     using TriVertexArrayType = std::vector<Vector3>;
 
 
-    // indexing & cell methods
+    // indexing methods
     static bool ComputeCellKeyFromIndex(
         const CellIndex3& Nxyz, const CellIndex3& ijk, CellKey& key);
     static bool ComputeIndexFromCellKey(
@@ -79,7 +78,7 @@ public:
             TriKeyArray triIndices;    // indices to tris overlapping with this cell
         };
         using CellBucketArrayType = std::vector<TriCellBucket>;
-        CellBucketArrayType m_triCells; // cells pointing directly to overlapping tris
+        CellBucketArrayType triCells; // cells pointing directly to overlapping tris
 
         struct InitInfo
         {
@@ -101,11 +100,6 @@ public:
         // finalize construction and store the result to the input grid
         // mesh data ownership is passed to the grid, rest of builder data is cleared
         bool FinalizeGridSetup(ClosestTriUniformGrid& grid);
-
-        // utils
-        void CreateTriInfoFromTriIndices(TriKey idx0, TriKey idx1, TriKey idx2, TriInfo& info);
-        TriKey AddTriInfo(const TriInfo& info);
-        void AddTriToBucket(CellKey cellKey, TriKey triKey);
 
         // internal
         bool GetOverlappingTrisOnCell(CellKey key, TriKeyArray& triIndices) const;
@@ -144,7 +138,6 @@ public:
 
 
     // internal
-    
     // an estimate of the used memory by the grid
     struct MemoryStats
     {
