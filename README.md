@@ -77,7 +77,7 @@ cmake --build .
 ./ctrigrid.Benchmarks
 ```
 
-> Benchmarks only work for x64 builds. On Windows, the Win64 generator needs to be passed explicitly to cmake, e.g. for VS 2017 add `-G"Visual Studio 15 Win64"` tp the cmake command line, since the default is to use Win32. 
+> Benchmarks only work for x64 builds. On Windows, the Win64 generator needs to be passed explicitly to cmake, e.g. for VS 2017 add `-G"Visual Studio 15 Win64"` to the cmake command line, since the default is to use Win32. 
 
 ### Usage
 
