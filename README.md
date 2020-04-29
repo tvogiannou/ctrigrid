@@ -85,19 +85,19 @@ cmake --build .
 #include <ctrigrid/ClosestTriUniformGrid.h>
 
 // grid paramters
-citrgrid::ClosestTriUniformGrid::CellKey Nx = ...    // Number of cells along X axis
-citrgrid::ClosestTriUniformGrid::CellKey Ny = ...    // Number of cells along Y axis
-citrgrid::ClosestTriUniformGrid::CellKey Nz = ...    // Number of cells along Z axis
+ctrigrid::ClosestTriUniformGrid::CellKey Nx = ...    // Number of cells along X axis
+ctrigrid::ClosestTriUniformGrid::CellKey Ny = ...    // Number of cells along Y axis
+ctrigrid::ClosestTriUniformGrid::CellKey Nz = ...    // Number of cells along Z axis
 float cellWidth = ...                                // Width of the cell, size is the same along all dimensions
 Vector3 origin = ...                                 // Origin of the grid in world space, i.e. cell at index (0, 0, 0) 
 
-citrgrid::ClosestTriUniformGrid grid;
+ctrigrid::ClosestTriUniformGrid grid;
 {
   // setup a builder for creating the grid
-  citrgrid::ClosestTriUniformGrid::Builder builder;
+  ctrigrid::ClosestTriUniformGrid::Builder builder;
 
   // initialize a grid builder
-  citrgrid::ClosestTriUniformGrid::Builder::InitInfo info = { Nx, Ny, Nz, origin, cellWidth };
+  ctrigrid::ClosestTriUniformGrid::Builder::InitInfo info = { Nx, Ny, Nz, origin, cellWidth };
   builder.Init(info);
 
   // construct from a triangle mesh
@@ -111,9 +111,9 @@ citrgrid::ClosestTriUniformGrid grid;
 }
 
 // query a point
-citrgrid::Vector3 testPoint = ...                       // some test point
-citrgrid::Vector3 closestPoint;                         // the 3D position in the surface of the tri mesh that is closest to testPoint 
-citrgrid::ClosestTriUniformGrid::TriKey triKey;  // the index of the mesh triangle where the closestPoint lies on
+ctrigrid::Vector3 testPoint = ...                       // some test point
+ctrigrid::Vector3 closestPoint;                         // the 3D position in the surface of the tri mesh that is closest to testPoint 
+ctrigrid::ClosestTriUniformGrid::TriKey triKey;  // the index of the mesh triangle where the closestPoint lies on
 bool validResult = grid.FindClosestPointOnTris(testPoint, closestPoint, triKey);
 ```
 
@@ -130,6 +130,7 @@ mkdir build
 cd build
 cmake -DCTRIGRID_GENERATE_PYTHON_BINDINGS=1 ..
 ```
+> It is reccomended to avoid building tests alongside the python bindings since both cmake scripts will try to find the installed python libs and may result in some version conflicts. 
 
 The built python module (as .so file) can then be imported in python source.
 ```python
