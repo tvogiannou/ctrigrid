@@ -39,3 +39,6 @@
 *.exe
 *.out
 *.app
+
+# test files
+!*python/tests/stanford_bunny.obj
