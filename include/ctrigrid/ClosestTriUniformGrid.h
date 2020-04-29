@@ -167,7 +167,7 @@ private:
     BitStreamBuffer::BufferIndex        m_lastBitPos;
     BitStreamBuffer::BufferIndexArray   m_indexCells;
 
-    friend class ClosestTriUniformGrid::Builder;
+    friend struct ClosestTriUniformGrid::Builder;
 };
 
 }
