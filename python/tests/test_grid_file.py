@@ -65,7 +65,7 @@ def main(filename, N=16, num_test_points=16, verbose=True, padding_perc=0.1):
 
     mesh_vertices, mesh_indices = ctrigrid_bindings.load_obj(filename)
     if verbose:
-        print("Loaded mesh {} with {} vertices and {} triangles".format(filename, mesh_vertices.size/3, mesh_indices.size/3))
+        print("Loaded mesh {} with {} vertices and {} triangles".format(filename, int(mesh_vertices.size/3), int(mesh_indices.size/3)))
 
     # align mesh to origin
     # m = numpy.mean(mesh_vertices.reshape((-1, 3)), axis=0)
