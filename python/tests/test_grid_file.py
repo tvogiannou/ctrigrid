@@ -113,10 +113,12 @@ def script_main(filename, N, num_test_points, verbose, padding_perc, render):
                 abs(numpy.min(mesh_vertices.reshape((-1, 3)), axis=0)[2]) * 10
             GLutils.g_translation_step = 0.1 * numpy.max(mesh_vertices)
 
-            # re arrange in query point - closest point pairs
+            # add mesh data
             GLutils.addTriMesh(mesh_vertices, 
                 ctrigrid_bindings.compute_vertex_normals(mesh_vertices, mesh_indices), mesh_indices)
             GLutils.addPointSet(cp.ravel().tolist())
+
+            # re arrange in query point - closest point pairs
             lines = numpy.hstack((c.reshape((-1, 3)), cp.reshape((-1, 3))))
             GLutils.addLineSet(lines.ravel().tolist())
 
