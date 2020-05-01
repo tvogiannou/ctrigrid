@@ -7,7 +7,7 @@ This directory contains a small number of python scripts for testing the ctrigri
 To run the scripts, build the ctrigrid bindings and copy the native module in the directory of the scripts.
 The only other dependency is [numpy](https://numpy.org/).
 
-The `test_grid_file.py` is a bit more involved as it loads an OBJ mesh file and setups a grid for it with some random test points to test queries against. If PyOpenGL and [glut](http://freeglut.sourceforge.net/) are available in the system it can also render the results in 3D. Below is the output as printed in the console window when invoking the script with the help param
+Typically the tests just make sure that execution is successful and simply print the results, but the `test_grid_file.py` is a bit more involved. It takes input options and can load an [OBJ](https://www.fileformat.info/format/wavefrontobj/egff.htm) mesh file, setting up a grid for it with some random points to test queries against. If [PyOpenGL](https://pypi.org/project/PyOpenGL/) and [glut](http://freeglut.sourceforge.net/) are available in the system it can also render the results in 3D. Below is the console output of the script help 
 
 ```bash
 python3 test_grid_file.py -h
@@ -15,7 +15,7 @@ python3 test_grid_file.py -h
 usage: test_grid_file.py [-h] -i INFILE [-v] [-t TESTPOINTS] [-n N]
                          [-p PADDING] [-r]
 
-ctrigrid python demo: Load a triangle mesh from n OBJ file, create a grid
+ctrigrid python demo: Load a triangle mesh from an .OBJ file, create a grid
 using ctrigrid and query random points around it. Prints out timings for grid
 construction & query.
 
