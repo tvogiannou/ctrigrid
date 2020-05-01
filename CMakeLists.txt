@@ -25,11 +25,12 @@ if(MSVC)
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /W4 /GR- /WX /Zc:wchar_t-")
 endif(MSVC)
 if(UNIX)
-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -Werror -fno-rtti")
-
     if(CTRIGRID_GENERATE_PYTHON_BINDINGS)
-        set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -frtti -ldl -lpthread -fpic")   # rtti for pybind11
+        set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -g -frtti -ldl -lpthread -fpic")   # rtti for pybind11
+    else()
+        set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -g -Wall -Werror -fno-rtti")
     endif()
+
 endif(UNIX)
 
 
@@ -82,7 +83,8 @@ if (CTRIGRID_GENERATE_PYTHON_BINDINGS)
     add_subdirectory(${CTRIGRID_EXTERNAL_DEPENDENCIES_LOCATION}/pybind11  ${CMAKE_CURRENT_BINARY_DIR}/pybind11-build)
 
     # create pybind11 module
-    pybind11_add_module(ctrigrid_bindings 
+    set(PYBIND11_CPP_STANDARD -std=c++11)
+    pybind11_add_module(ctrigrid_bindings SHARED 
                         ${CMAKE_CURRENT_LIST_DIR}/python/module.cpp
                         ${CMAKE_CURRENT_LIST_DIR}/python/queries_bindings.cpp
                         ${CMAKE_CURRENT_LIST_DIR}/python/mesh_bindings.cpp
