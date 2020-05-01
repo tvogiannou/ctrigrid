@@ -253,11 +253,11 @@ ClosestTriUniformGrid::ComputeMemFootprint() const
     return stats;
 }
 
-bool 
+ClosestTriUniformGrid::Builder::BuilderStatus 
 ClosestTriUniformGrid::GetClosestTrisOnCell(CellKey key, TriKeyArray& triIndices) const
 {
     if (key >= (CellKey)m_indexCells.size())
-        return false;
+        return Builder::BuilderStatus::eBUILDER_STATUS_SUCCESS;
 
     triIndices.clear();
 
@@ -270,7 +270,7 @@ ClosestTriUniformGrid::GetClosestTrisOnCell(CellKey key, TriKeyArray& triIndices
     while (!reader.Finished())
         triIndices.push_back((TriKey)reader.Next());
 
-    return true;
+    return Builder::BuilderStatus::eBUILDER_STATUS_SUCCESS;
 }
 
 bool 

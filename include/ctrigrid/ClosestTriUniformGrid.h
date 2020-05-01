@@ -46,7 +46,6 @@ public:
     using TriInfoArrayType = std::vector<TriInfo>;
     using TriVertexArrayType = std::vector<Vector3>;
 
-
     // indexing methods
     static bool ComputeCellKeyFromIndex(
         const CellIndex3& Nxyz, const CellIndex3& ijk, CellKey& key);
@@ -64,7 +63,21 @@ public:
     // utility to build a grid from a vertex & triangle index buffers
     struct Builder
     {
+        enum struct BuilderStatus : int
+        {
+            eBUILDER_STATUS_SUCCESS = 0,
+            eBUILDER_STATUS_NONINITIALIZED,         // builder has not been initialized yet
+            eBUILDER_STATUS_NONEMPTY_MESH,          // builder has already allocated mesh data
+            eBUILDER_STATUS_INVALID_PARAM_N,        // invalid Nx/y/z param passed or used
+            eBUILDER_STATUS_INVALID_PARAM_WIDTH,    // invalid cell width param passed or used
+            eBUILDER_STATUS_INVALID_PARAM_MESH,     // invalid mesh data (positions and/or indices) passed or used
+            eBUILDER_STATUS_POINT_OUT_OF_GRID,      // point in mesh data is outside the grid range
+            eBUILDER_STATUS_INVALID_INDEX,          // index (or key) used/passed not in grid range
+        };
+
+
         // data to also be stored in the grid
+        // public for convenience
         TriVertexArrayType      vertices;           // array of vertices (grid space)
         TriInfoArrayType        tris;               // array of tris 
         CellIndex3              Nxyz;               // number of cells along X, Y, Z axis
@@ -86,28 +99,28 @@ public:
             Vector3      origin;         // origin of the grid in world space
             float        cellWidth;      // width of each cell along all dimensions
         };
-        bool Init(const InitInfo& info);
+        BuilderStatus Init(const InitInfo& info);
         void Clear();
 
         // grid construction
-        bool BeginGridSetup();
+        BuilderStatus BeginGridSetup();
 
         // positions and indices are flattened buffers of vertex data 
         // both expected to have sizes that are multiples of 3
         // NOTE: adding multiple meshes is not supported at the moment!
-        bool AddTriMesh(const std::vector<float>& positions, const std::vector<uint32_t>& indices);
-        bool AddTriMesh(const float* positions, uint32_t posCount, 
+        BuilderStatus AddTriMesh(const std::vector<float>& positions, const std::vector<uint32_t>& indices);
+        BuilderStatus AddTriMesh(const float* positions, uint32_t posCount, 
                         const uint32_t* indices, uint32_t idxCount,
                         uint32_t posStride = 3u);
         
         // finalize construction and store the result to the input grid
         // mesh data ownership is passed to the grid, rest of builder data is cleared
-        bool FinalizeGridSetup(ClosestTriUniformGrid& grid);
+        BuilderStatus FinalizeGridSetup(ClosestTriUniformGrid& grid);
 
         // internal
-        bool GetOverlappingTrisOnCell(CellKey key, TriKeyArray& triIndices) const;
-        bool ComputeCelBBoxWorldSpace(CellIndex i, CellIndex j, CellIndex k, AxisAlignedBoundingBox& bbox) const;
-        bool ComputeCelBBoxGridSpace(CellIndex i, CellIndex j, CellIndex k, AxisAlignedBoundingBox& bbox) const;
+        BuilderStatus GetOverlappingTrisOnCell(CellKey key, TriKeyArray& triIndices) const;
+        BuilderStatus ComputeCelBBoxWorldSpace(CellIndex i, CellIndex j, CellIndex k, AxisAlignedBoundingBox& bbox) const;
+        BuilderStatus ComputeCelBBoxGridSpace(CellIndex i, CellIndex j, CellIndex k, AxisAlignedBoundingBox& bbox) const;
     };
 
 
@@ -129,7 +142,7 @@ public:
     // closest in this context means that any other triangle cannot be closer to the cell than one (or more) in the list
     // in practice, this is the list of triangles that will be evaluated during a distance query
     // triIndices refer to the grid triangle list 
-    bool GetClosestTrisOnCell(CellKey key, TriKeyArray& triIndices) const;
+    Builder::BuilderStatus GetClosestTrisOnCell(CellKey key, TriKeyArray& triIndices) const;
     bool GetTriVerticesWorldSpace(TriKey triKey, Vector3& v0, Vector3& v1, Vector3& v2) const;
     // find the closest point to p and the respective tri key
     // forceInGrid can be set to only look perform the query if p lies in the grid, if set to false then

@@ -210,21 +210,21 @@ struct GridBorderRegionHelper
     }
 };
 
-bool 
+ClosestTriUniformGrid::Builder::BuilderStatus 
 ClosestTriUniformGrid::Builder::ComputeCelBBoxWorldSpace(
     CellIndex i, CellIndex j, CellIndex k, AxisAlignedBoundingBox& bbox) const
 {
-    if (!ComputeCelBBoxGridSpace(i, j, k, bbox))
-        return false;
+    if (ComputeCelBBoxGridSpace(i, j, k, bbox) != BuilderStatus::eBUILDER_STATUS_SUCCESS)
+        return BuilderStatus::eBUILDER_STATUS_INVALID_INDEX;
 
     // add grid origin
     bbox.min.Add(gridBox.min);
     bbox.max.Add(gridBox.min);
 
-    return true;
+    return BuilderStatus::eBUILDER_STATUS_SUCCESS;
 }
 
-bool 
+ClosestTriUniformGrid::Builder::BuilderStatus 
 ClosestTriUniformGrid::Builder::ComputeCelBBoxGridSpace(
     CellIndex i, CellIndex j, CellIndex k, AxisAlignedBoundingBox& bbox) const
 {
@@ -232,7 +232,7 @@ ClosestTriUniformGrid::Builder::ComputeCelBBoxGridSpace(
     std::tie(Nx, Ny, Nz) = Nxyz;
 
     if (i >= Nx || j >= Ny || k >= Nz)
-        return false;
+        return BuilderStatus::eBUILDER_STATUS_INVALID_INDEX;
 
     // compute start and end points of cell bbox
     Vector3 p0(((float)i) * cellWidth, ((float)j) * cellWidth, ((float)k) * cellWidth);
@@ -243,16 +243,16 @@ ClosestTriUniformGrid::Builder::ComputeCelBBoxGridSpace(
     bbox.AddPoint(p0);
     bbox.AddPoint(p1);
 
-    return true;
+    return BuilderStatus::eBUILDER_STATUS_SUCCESS;
 }
 
-bool 
+ClosestTriUniformGrid::Builder::BuilderStatus 
 ClosestTriUniformGrid::Builder::Init(const InitInfo& info)
 {
     if (info.Nx == 0u || info.Ny == 0u || info.Nz == 0u)
-        return false;
+        return BuilderStatus::eBUILDER_STATUS_INVALID_PARAM_N;
     if (info.cellWidth <= 0.f)
-        return false;
+        return BuilderStatus::eBUILDER_STATUS_INVALID_PARAM_WIDTH;
 
     Nxyz = ClosestTriUniformGrid::ToIndex3(info.Nx, info.Ny, info.Nz);
 
@@ -267,7 +267,7 @@ ClosestTriUniformGrid::Builder::Init(const InitInfo& info)
     gridBox.AddPoint(info.origin);
     gridBox.AddPoint(maxExtend);
 
-    return true;
+    return BuilderStatus::eBUILDER_STATUS_SUCCESS;
 }
 
 void 
@@ -282,33 +282,35 @@ ClosestTriUniformGrid::Builder::Clear()
     triCells.clear();
 }
 
-bool 
+ClosestTriUniformGrid::Builder::BuilderStatus 
 ClosestTriUniformGrid::Builder::BeginGridSetup()
 {
     if (!vertices.empty() || !tris.empty() || !triCells.empty())
-        return false;
+        return BuilderStatus::eBUILDER_STATUS_NONEMPTY_MESH;
 
     CellIndex Nx, Ny, Nz;
     std::tie(Nx, Ny, Nz) = Nxyz;
     if (Nx == 0u || Ny == 0u || Nz == 0u)
-        return false;
+        return BuilderStatus::eBUILDER_STATUS_INVALID_PARAM_N;
 
     triCells.resize(Nx * Ny * Nz);
 
-    return true;
+    return BuilderStatus::eBUILDER_STATUS_SUCCESS;
 }
 
-bool 
+ClosestTriUniformGrid::Builder::BuilderStatus  
 ClosestTriUniformGrid::Builder::FinalizeGridSetup(ClosestTriUniformGrid& grid)
 {
     if (tris.empty() || triCells.empty())
-        return false;
+        return BuilderStatus::eBUILDER_STATUS_NONINITIALIZED;
 
     grid.Clear();
-    std::tie(grid.m_Nx, grid.m_Ny, grid.m_Nz)= Nxyz;
+    std::tie(grid.m_Nx, grid.m_Ny, grid.m_Nz) = Nxyz;
 
     if (grid.m_Nx == 0u || grid.m_Ny == 0u || grid.m_Nz == 0u)
-        return false;
+        return BuilderStatus::eBUILDER_STATUS_INVALID_PARAM_N;
+    if (cellWidth <= 0.f)
+        return BuilderStatus::eBUILDER_STATUS_INVALID_PARAM_WIDTH;
 
     // figure out the width required for the number of tris we got
     {
@@ -335,7 +337,7 @@ ClosestTriUniformGrid::Builder::FinalizeGridSetup(ClosestTriUniformGrid& grid)
                 CellKey cellKey;
                 if (!ComputeCellKeyFromIndex(
                     Nxyz, ClosestTriUniformGrid::ToIndex3(i, j, k), cellKey))
-                    return false;
+                    return BuilderStatus::eBUILDER_STATUS_INVALID_INDEX;
 
                 TriKeyArray cellTris;// = triCells.at(cellKey).triIndices;
 
@@ -347,7 +349,7 @@ ClosestTriUniformGrid::Builder::FinalizeGridSetup(ClosestTriUniformGrid& grid)
                 {
                     CellKeyArray cellRegionKeys;
                     if (!testRegion.GetCellKeysFromRegion(*this, cellRegionKeys))
-                        return false;
+                        return BuilderStatus::eBUILDER_STATUS_INVALID_INDEX;
 
                     for (CellKey regionKey : cellRegionKeys)
                     {
@@ -374,7 +376,7 @@ ClosestTriUniformGrid::Builder::FinalizeGridSetup(ClosestTriUniformGrid& grid)
 
                     CellKeyArray cellRegionKeys;
                     if (!testRegion.GetCellKeysFromRegion(*this, cellRegionKeys))
-                        return false;
+                        return BuilderStatus::eBUILDER_STATUS_INVALID_INDEX;
 
                     for (CellKey regionKey : cellRegionKeys)
                     {
@@ -426,113 +428,30 @@ ClosestTriUniformGrid::Builder::FinalizeGridSetup(ClosestTriUniformGrid& grid)
 
     Clear();
 
-    return true;
+    return BuilderStatus::eBUILDER_STATUS_SUCCESS;
 }
 
-bool 
+ClosestTriUniformGrid::Builder::BuilderStatus  
 ClosestTriUniformGrid::Builder::AddTriMesh(
     const std::vector<float>& positions, const std::vector<uint32_t>& indices)
 {
-    CTRIGRID_ASSERT(vertices.empty());
-    CTRIGRID_ASSERT(tris.empty());
-
-    // vertices and indices arrays need to be multiples of 3
-    if (positions.size() % 3u != 0 || indices.size() % 3u != 0)
-        return false;
-
-    // gather vertices first
-    vertices.reserve(positions.size() / 3u);
-    for (size_t i = 0u; i < positions.size(); i += 3u)
-    {
-        Vector3 v(positions[i], positions[i+1], positions[i+2]);
-
-        // check if point is in grid bounding box
-        if (!gridBox.Contains(v))
-            return false;
-
-        // transform vertex to grid space
-        v.Sub(gridBox.min);
-
-        // add to storage
-        vertices.push_back(v);
-    }
-    vertices.shrink_to_fit();
-
-    // add tris
-    tris.reserve(indices.size() / 3u);
-    for (size_t triv = 0u; triv < indices.size(); triv += 3u)
-    {
-        // add new tri info
-        const uint32_t idx0 = indices[triv];
-        const uint32_t idx1 = indices[triv + 1];
-        const uint32_t idx2 = indices[triv + 2];
-
-        TriInfo info;
-        CreateTriInfoFromTriIndices(*this, idx0, idx1, idx2, info);
-        TriKey triKey = AddTriInfo(*this, info);
-
-        // get vertices for the tri
-        const Vector3& v0 = vertices[idx0];
-        const Vector3& v1 = vertices[idx1];
-        const Vector3& v2 = vertices[idx2];
-
-        // compute aabox
-        AxisAlignedBoundingBox triBox;
-        triBox.Reset();
-        triBox.AddPoint(v0);
-        triBox.AddPoint(v1);
-        triBox.AddPoint(v2);
-
-        // get min & max map indices
-        CellIndex iMin, jMin, kMin;
-        CellIndex iMax, jMax, kMax;
-        if (!ComputeIndexFromPointGridSpace(cellWidth, triBox.min, iMin, jMin, kMin))
-            return false;
-        if (!ComputeIndexFromPointGridSpace(cellWidth,triBox.max, iMax, jMax, kMax))
-            return false;
-
-        // loop all cells and add tri if overlapping
-        for (ClosestTriUniformGrid::CellIndex i = iMin; i <= iMax; ++i)
-        {
-            for (ClosestTriUniformGrid::CellIndex j = jMin; j <= jMax; ++j)
-            {
-                for (ClosestTriUniformGrid::CellIndex k = kMin; k <= kMax; ++k)
-                {
-                    // do the box-tri overlap test in grid space
-                    AxisAlignedBoundingBox cellBox;
-                    if (!ComputeCelBBoxGridSpace(i, j, k, cellBox))
-                        return false;
-
-                    if (IntersectionQuery::OverlapAxisAlignedBoxTri(cellBox, v0, v1, v2))
-                    {
-                        ClosestTriUniformGrid::CellKey cellKey;
-                        if (!ComputeCellKeyFromIndex(
-                            Nxyz, ClosestTriUniformGrid::ToIndex3(i, j, k), cellKey))
-                            return false;
-
-                        AddTriToBucket(*this, cellKey, triKey);
-                    }
-                }
-            }
-        }
-    }
-    tris.shrink_to_fit();
-
-    return true;
+    return AddTriMesh(positions.data(), (uint32_t)positions.size(),
+                    indices.data(), indices.size(),
+                    3u);
 }
 
-bool 
+ClosestTriUniformGrid::Builder::BuilderStatus 
 ClosestTriUniformGrid::Builder::AddTriMesh(
     const float* positions, uint32_t posCount, 
     const uint32_t* indices, uint32_t idxCount,
     uint32_t posStride)
 {
-    CTRIGRID_ASSERT(vertices.empty());
-    CTRIGRID_ASSERT(tris.empty());
+    if (!vertices.empty() || !tris.empty())
+        return BuilderStatus::eBUILDER_STATUS_NONEMPTY_MESH;
 
     // vertices and indices arrays need to be multiples of 3
     if (posCount % 3u != 0 || idxCount % 3u != 0 || posStride < 3u)
-        return false;
+        return BuilderStatus::eBUILDER_STATUS_INVALID_PARAM_MESH;
     
     // gather vertices first
     vertices.reserve(posCount / 3u);
@@ -542,7 +461,7 @@ ClosestTriUniformGrid::Builder::AddTriMesh(
 
         // check if point is in grid bounding box
         if (!gridBox.Contains(v))
-            return false;
+            return BuilderStatus::eBUILDER_STATUS_POINT_OUT_OF_GRID;
 
         // transform vertex to grid space
         v.Sub(gridBox.min);
@@ -581,9 +500,9 @@ ClosestTriUniformGrid::Builder::AddTriMesh(
         CellIndex iMin, jMin, kMin;
         CellIndex iMax, jMax, kMax;
         if (!ComputeIndexFromPointGridSpace(cellWidth, triBox.min, iMin, jMin, kMin))
-            return false;
-        if (!ComputeIndexFromPointGridSpace(cellWidth,triBox.max, iMax, jMax, kMax))
-            return false;
+            return BuilderStatus::eBUILDER_STATUS_POINT_OUT_OF_GRID;
+        if (!ComputeIndexFromPointGridSpace(cellWidth, triBox.max, iMax, jMax, kMax))
+            return BuilderStatus::eBUILDER_STATUS_POINT_OUT_OF_GRID;
 
         // loop all cells and add tri if overlapping
         for (ClosestTriUniformGrid::CellIndex i = iMin; i <= iMax; ++i)
@@ -594,15 +513,15 @@ ClosestTriUniformGrid::Builder::AddTriMesh(
                 {
                     // do the box-tri overlap test in grid space
                     AxisAlignedBoundingBox cellBox;
-                    if (!ComputeCelBBoxGridSpace(i, j, k, cellBox))
-                        return false;
+                    if (ComputeCelBBoxGridSpace(i, j, k, cellBox) != BuilderStatus::eBUILDER_STATUS_SUCCESS)
+                        return BuilderStatus::eBUILDER_STATUS_INVALID_INDEX;
 
                     if (IntersectionQuery::OverlapAxisAlignedBoxTri(cellBox, v0, v1, v2))
                     {
                         ClosestTriUniformGrid::CellKey cellKey;
                         if (!ComputeCellKeyFromIndex(
                             Nxyz, ClosestTriUniformGrid::ToIndex3(i, j, k), cellKey))
-                            return false;
+                            return BuilderStatus::eBUILDER_STATUS_INVALID_INDEX;
 
                         AddTriToBucket(*this, cellKey, triKey);
                     }
@@ -612,14 +531,14 @@ ClosestTriUniformGrid::Builder::AddTriMesh(
     }
     tris.shrink_to_fit();
 
-    return true;
+    return BuilderStatus::eBUILDER_STATUS_SUCCESS;
 }
 
-bool
+ClosestTriUniformGrid::Builder::BuilderStatus
 ClosestTriUniformGrid::Builder::GetOverlappingTrisOnCell(CellKey key, TriKeyArray& triIndices) const
 {
     if (key >= (CellKey)triCells.size())
-        return false;
+        return BuilderStatus::eBUILDER_STATUS_INVALID_INDEX;
 
     triIndices.clear();
 
@@ -627,7 +546,7 @@ ClosestTriUniformGrid::Builder::GetOverlappingTrisOnCell(CellKey key, TriKeyArra
     for (TriKey triKey : bucket.triIndices)
         triIndices.push_back(triKey);
 
-    return true;
+    return BuilderStatus::eBUILDER_STATUS_SUCCESS;
 }
 
 }

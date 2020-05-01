@@ -9,6 +9,43 @@
 #include <functional>
 
 
+using BuilderStatus = ctrigrid::ClosestTriUniformGrid::Builder::BuilderStatus;
+
+void s_CheckBuilderStatus(BuilderStatus status)
+{
+    const std::string msg = "Grid builder failed: ";
+    switch (status)
+    {
+    case BuilderStatus::eBUILDER_STATUS_SUCCESS:
+        break;
+    case BuilderStatus::eBUILDER_STATUS_NONINITIALIZED:
+        throw std::runtime_error(msg + "builder not initialized");
+        break;
+    case BuilderStatus::eBUILDER_STATUS_NONEMPTY_MESH:
+        throw std::runtime_error(msg + "builder has mesh data");
+        break;
+    case BuilderStatus::eBUILDER_STATUS_INVALID_PARAM_N:
+        throw std::runtime_error(msg + "invalid param N");
+        break;
+    case BuilderStatus::eBUILDER_STATUS_INVALID_PARAM_WIDTH:
+        throw std::runtime_error(msg + "invalid param width");
+        break;
+    case BuilderStatus::eBUILDER_STATUS_INVALID_PARAM_MESH:
+        throw std::runtime_error(msg + "invalid mesh");
+        break;
+    case BuilderStatus::eBUILDER_STATUS_POINT_OUT_OF_GRID:
+        throw std::runtime_error(msg + "point out of grid");
+        break;
+    case BuilderStatus::eBUILDER_STATUS_INVALID_INDEX:
+        throw std::runtime_error(msg + "invalid index");
+        break;
+
+    default:
+        throw std::runtime_error(msg + "internal error");
+        break;
+    }
+}
+
 CTRIGRID_UniformGrid_wrapper::CTRIGRID_UniformGrid_wrapper(uint32_t Nx, uint32_t Ny, uint32_t Nz, float cellWidth,
     const CTRIGRID_Vector3_wrapper& origin)
 {
@@ -29,8 +66,9 @@ CTRIGRID_UniformGrid_wrapper::AddTris(
     pybind11::array_t<uint32_t> indices)
 {
     ctrigrid::ClosestTriUniformGrid::Builder builder;
-    if(!builder.Init(info))
-        throw std::runtime_error("Grid builder init failed: internal error");
+
+    BuilderStatus s = builder.Init(info);
+    s_CheckBuilderStatus(s);
     
     pybind11::buffer_info vertexBufferInfo = vertices.request();
     pybind11::buffer_info indexBufferInfo = indices.request();
@@ -51,12 +89,14 @@ CTRIGRID_UniformGrid_wrapper::AddTris(
     std::memcpy(v.data(), vtx, numVertices * sizeof(float));
     std::memcpy(i.data(), idx, numIndices * sizeof(uint32_t));
 
-    if (!builder.BeginGridSetup()) 
-        throw std::runtime_error("Grid builder begin failed: internal error");
-    if (!builder.AddTriMesh(v, i))
-        throw std::runtime_error("Grid builder AddTriMesh failed: internal error");
-    if (!builder.FinalizeGridSetup(grid)) 
-        throw std::runtime_error("Grid builder finalize failed: internal error");
+    s = builder.BeginGridSetup();
+    s_CheckBuilderStatus(s);
+
+    s = builder.AddTriMesh(v, i);
+    s_CheckBuilderStatus(s);
+
+    s = builder.FinalizeGridSetup(grid);
+    s_CheckBuilderStatus(s);
 }
 
 std::tuple<CTRIGRID_Vector3_wrapper, size_t> 

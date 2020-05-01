@@ -9,6 +9,9 @@
 #include <functional>
 
 
+using BuilderStatus = ctrigrid::ClosestTriUniformGrid::Builder::BuilderStatus;
+
+
 static 
 void s_CheckStoredTrisInCell(
     const ctrigrid::ClosestTriUniformGrid::CellIndex3& Nxyz,
@@ -16,8 +19,9 @@ void s_CheckStoredTrisInCell(
     ctrigrid::ClosestTriUniformGrid::CellIndex j, 
     ctrigrid::ClosestTriUniformGrid::CellIndex k,
     size_t expectedCount,
-    std::function<                                                  // function to retrieve the triangles to test againt
-    bool(ctrigrid::ClosestTriUniformGrid::CellKey key,       // it is different between the grid and the builder
+    std::function<          // function to retrieve the triangles to test againt
+    BuilderStatus           // it is different between the grid and the builder
+        (ctrigrid::ClosestTriUniformGrid::CellKey key,              
          ctrigrid::ClosestTriUniformGrid::TriKeyArray&)> GetTris)
 {
     using namespace ctrigrid;
@@ -29,8 +33,8 @@ void s_CheckStoredTrisInCell(
     EXPECT_TRUE(r);
 
     ClosestTriUniformGrid::TriKeyArray tris;
-    r = GetTris(key, tris);    
-    EXPECT_TRUE(r);
+    BuilderStatus s = GetTris(key, tris);    
+    EXPECT_TRUE(s == BuilderStatus::eBUILDER_STATUS_SUCCESS);
     
     EXPECT_EQ(tris.size(), expectedCount);
 }
@@ -189,13 +193,13 @@ TEST(ClosestTriUniformGridUnitTests, UniformGridTriCellKey)
     {
         // non initialized should fail
         AxisAlignedBoundingBox bbox;
-        bool r = builder.ComputeCelBBoxWorldSpace(0u, 0u, 0u, bbox);
-        EXPECT_FALSE(r);
+        BuilderStatus s = builder.ComputeCelBBoxWorldSpace(0u, 0u, 0u, bbox);
+        EXPECT_TRUE(s == BuilderStatus::eBUILDER_STATUS_INVALID_INDEX);
 
         ClosestTriUniformGrid::Builder::InitInfo info = { Nx, Ny, Nz, origin, cellWidth };
         
-        r = builder.Init(info);
-        EXPECT_TRUE(r);
+        s = builder.Init(info);
+        EXPECT_TRUE(s == BuilderStatus::eBUILDER_STATUS_SUCCESS);
     }
 
     // test points in & out of the grid
@@ -236,7 +240,8 @@ TEST(ClosestTriUniformGridUnitTests, UniformGridTriCellKey)
     // test cell aabox
     {
         AxisAlignedBoundingBox bbox;
-        bool r = builder.ComputeCelBBoxWorldSpace(0u, 0u, 0u, bbox); EXPECT_TRUE(r);
+        BuilderStatus s = builder.ComputeCelBBoxWorldSpace(0u, 0u, 0u, bbox); 
+        EXPECT_TRUE(s == BuilderStatus::eBUILDER_STATUS_SUCCESS);
         EXPECT_FLOAT_EQ(bbox.min.x, origin.x);
         EXPECT_FLOAT_EQ(bbox.min.y, origin.y);
         EXPECT_FLOAT_EQ(bbox.min.z, origin.z);
@@ -244,7 +249,8 @@ TEST(ClosestTriUniformGridUnitTests, UniformGridTriCellKey)
         EXPECT_FLOAT_EQ(bbox.max.y, origin.y + cellWidth);
         EXPECT_FLOAT_EQ(bbox.max.z, origin.z + cellWidth);
 
-        r = builder.ComputeCelBBoxWorldSpace(Nx - 1u, Ny - 1u, Nz - 1u, bbox); EXPECT_TRUE(r);
+        s = builder.ComputeCelBBoxWorldSpace(Nx - 1u, Ny - 1u, Nz - 1u, bbox); 
+        EXPECT_TRUE(s == BuilderStatus::eBUILDER_STATUS_SUCCESS);
         EXPECT_FLOAT_EQ(bbox.min.x, origin.x + (Nx - 1u) * cellWidth);
         EXPECT_FLOAT_EQ(bbox.min.y, origin.y + (Ny - 1u) * cellWidth);
         EXPECT_FLOAT_EQ(bbox.min.z, origin.z + (Nz - 1u) * cellWidth);
@@ -254,9 +260,12 @@ TEST(ClosestTriUniformGridUnitTests, UniformGridTriCellKey)
 
 
         // should fail
-        r = builder.ComputeCelBBoxWorldSpace(Nx, 0u, 0u, bbox); EXPECT_FALSE(r);
-        r = builder.ComputeCelBBoxWorldSpace(0u, Ny, 0u, bbox); EXPECT_FALSE(r);
-        r = builder.ComputeCelBBoxWorldSpace(0u, 0u, Nz, bbox); EXPECT_FALSE(r);
+        s = builder.ComputeCelBBoxWorldSpace(Nx, 0u, 0u, bbox); 
+        EXPECT_TRUE(s == BuilderStatus::eBUILDER_STATUS_INVALID_INDEX);
+        s = builder.ComputeCelBBoxWorldSpace(0u, Ny, 0u, bbox);
+        EXPECT_TRUE(s == BuilderStatus::eBUILDER_STATUS_INVALID_INDEX);
+        s = builder.ComputeCelBBoxWorldSpace(0u, 0u, Nz, bbox);
+        EXPECT_TRUE(s == BuilderStatus::eBUILDER_STATUS_INVALID_INDEX);
     }
 }
 
@@ -290,14 +299,14 @@ TEST(ClosestTriUniformGridUnitTests, UniformGridTriBuilder)
     {
         ClosestTriUniformGrid::Builder builder;
         ClosestTriUniformGrid::Builder::InitInfo info = { Nx, Ny, Nz, origin, cellWidth };
-        bool r = builder.Init(info);
-        EXPECT_TRUE(r);
+        BuilderStatus s = builder.Init(info);
+        EXPECT_TRUE(s == BuilderStatus::eBUILDER_STATUS_SUCCESS);
 
-        r = builder.BeginGridSetup();
-        EXPECT_TRUE(r);
+        s = builder.BeginGridSetup();
+        EXPECT_TRUE(s == BuilderStatus::eBUILDER_STATUS_SUCCESS);
 
-        r = builder.AddTriMesh(vertices, indices);
-        EXPECT_TRUE(r);
+        s = builder.AddTriMesh(vertices, indices);
+        EXPECT_TRUE(s == BuilderStatus::eBUILDER_STATUS_SUCCESS);
 
         // should not finalize for this test!
 
@@ -347,15 +356,15 @@ TEST(ClosestTriUniformGridUnitTests, UniformGridTriBuilder)
     {
         ClosestTriUniformGrid::Builder builder;
         ClosestTriUniformGrid::Builder::InitInfo info = { Nx, Ny, Nz, origin, cellWidth };
-        bool r = builder.Init(info);
-        EXPECT_TRUE(r);
+        BuilderStatus s = builder.Init(info);
+        EXPECT_TRUE(s == BuilderStatus::eBUILDER_STATUS_SUCCESS);
 
-        r = builder.BeginGridSetup();
-        EXPECT_TRUE(r);
+        s = builder.BeginGridSetup();
+        EXPECT_TRUE(s == BuilderStatus::eBUILDER_STATUS_SUCCESS);
 
-        r = builder.AddTriMesh( vertices.data(), vertices.size(), 
+        s = builder.AddTriMesh( vertices.data(), vertices.size(), 
                                 indices.data(), indices.size());
-        EXPECT_TRUE(r);
+        EXPECT_TRUE(s == BuilderStatus::eBUILDER_STATUS_SUCCESS);
 
         // should not finalize for this test!
         
@@ -437,17 +446,17 @@ TEST(ClosestTriUniformGridUnitTests, UniformGridTriBuilderFinalize)
     {
         ClosestTriUniformGrid::Builder::InitInfo info = { Nx, Ny, Nz, origin, cellWidth };
         ClosestTriUniformGrid::Builder builder;
-        bool r = builder.Init(info);
-        EXPECT_TRUE(r);
+        BuilderStatus s = builder.Init(info);
+        EXPECT_TRUE(s == BuilderStatus::eBUILDER_STATUS_SUCCESS);
 
-        r = builder.BeginGridSetup();
-        EXPECT_TRUE(r);
+        s = builder.BeginGridSetup();
+        EXPECT_TRUE(s == BuilderStatus::eBUILDER_STATUS_SUCCESS);
 
-        r = builder.AddTriMesh(vertices, indices);
-        EXPECT_TRUE(r);
+        s = builder.AddTriMesh(vertices, indices);
+        EXPECT_TRUE(s == BuilderStatus::eBUILDER_STATUS_SUCCESS);
 
-        r = builder.FinalizeGridSetup(grid);
-        EXPECT_TRUE(r);
+        s = builder.FinalizeGridSetup(grid);
+        EXPECT_TRUE(s == BuilderStatus::eBUILDER_STATUS_SUCCESS);
     }
 
     // check stored tris
@@ -518,17 +527,17 @@ TEST(ClosestTriUniformGridUnitTests, UniformGridTriClosestPoint)
     {
         ClosestTriUniformGrid::Builder::InitInfo info = { Nx, Ny, Nz, origin, cellWidth };
         ClosestTriUniformGrid::Builder builder;
-        bool r = builder.Init(info);
-        EXPECT_TRUE(r);
+        BuilderStatus s = builder.Init(info);
+        EXPECT_TRUE(s == BuilderStatus::eBUILDER_STATUS_SUCCESS);
 
-        r = builder.BeginGridSetup();
-        EXPECT_TRUE(r);
+        s = builder.BeginGridSetup();
+        EXPECT_TRUE(s == BuilderStatus::eBUILDER_STATUS_SUCCESS);
 
-        r = builder.AddTriMesh(vertices, indices);
-        EXPECT_TRUE(r);
+        s = builder.AddTriMesh(vertices, indices);
+        EXPECT_TRUE(s == BuilderStatus::eBUILDER_STATUS_SUCCESS);
 
-        r = builder.FinalizeGridSetup(grid);
-        EXPECT_TRUE(r);
+        s = builder.FinalizeGridSetup(grid);
+        EXPECT_TRUE(s == BuilderStatus::eBUILDER_STATUS_SUCCESS);
     }
 
     // query closest points
@@ -638,17 +647,17 @@ TEST(ClosestTriUniformGridUnitTests, UniformGridTriClosestPointRandom)
     {
         ClosestTriUniformGrid::Builder::InitInfo info = { Nx, Ny, Nz, origin, cellWidth };
         ClosestTriUniformGrid::Builder builder;
-        bool r = builder.Init(info);
-        EXPECT_TRUE(r);
+        BuilderStatus s = builder.Init(info);
+        EXPECT_TRUE(s == BuilderStatus::eBUILDER_STATUS_SUCCESS);
 
-        r = builder.BeginGridSetup();
-        EXPECT_TRUE(r);
+        s = builder.BeginGridSetup();
+        EXPECT_TRUE(s == BuilderStatus::eBUILDER_STATUS_SUCCESS);
 
-        r = builder.AddTriMesh(vertices, indices);
-        EXPECT_TRUE(r);
+        s = builder.AddTriMesh(vertices, indices);
+        EXPECT_TRUE(s == BuilderStatus::eBUILDER_STATUS_SUCCESS);
 
-        r = builder.FinalizeGridSetup(grid);
-        EXPECT_TRUE(r);
+        s = builder.FinalizeGridSetup(grid);
+        EXPECT_TRUE(s == BuilderStatus::eBUILDER_STATUS_SUCCESS);
     }
 
     // generate random points and respective closest points for testing
