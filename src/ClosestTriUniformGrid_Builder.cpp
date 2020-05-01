@@ -398,9 +398,17 @@ ClosestTriUniformGrid::Builder::FinalizeGridSetup(ClosestTriUniformGrid& grid)
                     //cellTris.shrink_to_fit();
 
                     // check if we need to expand the bit stream
-                    if (writer.GetCurrentWritePos() + cellTris.size() * grid.m_indexBitWidth + 64u >=
-                        grid.m_indexBitStream.GetSizeInBits())
-                        grid.m_indexBitStream.Resize(2 * grid.m_indexBitStream.GetSizeInBytes());
+                    const size_t estimatedSize = writer.GetCurrentWritePos() + 
+                        cellTris.size() * grid.m_indexBitWidth +    // the new bits to be added
+                        sizeof(uint64_t);                           // a double word for padding
+                    if (estimatedSize >= grid.m_indexBitStream.GetSizeInBits())
+                    {
+                        // TODO: find a better policy for the expansion
+                        const size_t newSize = std::max(
+                            2 * grid.m_indexBitStream.GetSizeInBytes(),
+                            estimatedSize + sizeof(uint64_t));
+                        grid.m_indexBitStream.Resize(newSize);
+                    }
 
                     // now store the indices to the bit stream
                     grid.m_indexCells.at(cellKey) = writer.GetCurrentWritePos();
