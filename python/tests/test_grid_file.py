@@ -56,16 +56,22 @@ def gen_grid_test_params(vertices, N, padding_perc=0.1):
     dv = v_max - v_min
     s = numpy.max(dv)
 
-    s_exp = (1+padding_perc) * s
-    width = s_exp / (N - 1)
-
     origin = v_min - 0.5 * padding_perc * numpy.array([s, s, s])
+    origin = ctrigrid_bindings.vec3(origin[0], origin[1], origin[2])
+
+    s_exp = (1+padding_perc) * s
+
+    # edge case
+    if N == 1:
+        return N, N, N, s_exp, origin
+
+    width = s_exp / (N - 1)
 
     Nx = math.ceil(N * (1 + padding_perc) * dv[0] / s_exp)
     Ny = math.ceil(N * (1 + padding_perc) * dv[1] / s_exp)
     Nz = math.ceil(N * (1 + padding_perc) * dv[2] / s_exp)
 
-    return Nx, Ny, Nz, width, ctrigrid_bindings.vec3(origin[0], origin[1], origin[2])
+    return Nx, Ny, Nz, width, origin
 
 
 def script_main(filename, N, num_test_points, verbose, padding_perc, render):
