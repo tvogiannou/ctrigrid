@@ -433,12 +433,14 @@ bool
 ClosestTriUniformGrid::Builder::AddTriMesh(
     const std::vector<float>& positions, const std::vector<uint32_t>& indices)
 {
+    CTRIGRID_ASSERT(vertices.empty());
+    CTRIGRID_ASSERT(tris.empty());
+
     // vertices and indices arrays need to be multiples of 3
     if (positions.size() % 3u != 0 || indices.size() % 3u != 0)
         return false;
 
     // gather vertices first
-    CTRIGRID_ASSERT(vertices.empty());
     vertices.reserve(positions.size() / 3u);
     for (size_t i = 0u; i < positions.size(); i += 3u)
     {
@@ -457,9 +459,102 @@ ClosestTriUniformGrid::Builder::AddTriMesh(
     vertices.shrink_to_fit();
 
     // add tris
-    CTRIGRID_ASSERT(tris.empty());
     tris.reserve(indices.size() / 3u);
     for (size_t triv = 0u; triv < indices.size(); triv += 3u)
+    {
+        // add new tri info
+        const uint32_t idx0 = indices[triv];
+        const uint32_t idx1 = indices[triv + 1];
+        const uint32_t idx2 = indices[triv + 2];
+
+        TriInfo info;
+        CreateTriInfoFromTriIndices(*this, idx0, idx1, idx2, info);
+        TriKey triKey = AddTriInfo(*this, info);
+
+        // get vertices for the tri
+        const Vector3& v0 = vertices[idx0];
+        const Vector3& v1 = vertices[idx1];
+        const Vector3& v2 = vertices[idx2];
+
+        // compute aabox
+        AxisAlignedBoundingBox triBox;
+        triBox.Reset();
+        triBox.AddPoint(v0);
+        triBox.AddPoint(v1);
+        triBox.AddPoint(v2);
+
+        // get min & max map indices
+        CellIndex iMin, jMin, kMin;
+        CellIndex iMax, jMax, kMax;
+        if (!ComputeIndexFromPointGridSpace(cellWidth, triBox.min, iMin, jMin, kMin))
+            return false;
+        if (!ComputeIndexFromPointGridSpace(cellWidth,triBox.max, iMax, jMax, kMax))
+            return false;
+
+        // loop all cells and add tri if overlapping
+        for (ClosestTriUniformGrid::CellIndex i = iMin; i <= iMax; ++i)
+        {
+            for (ClosestTriUniformGrid::CellIndex j = jMin; j <= jMax; ++j)
+            {
+                for (ClosestTriUniformGrid::CellIndex k = kMin; k <= kMax; ++k)
+                {
+                    // do the box-tri overlap test in grid space
+                    AxisAlignedBoundingBox cellBox;
+                    if (!ComputeCelBBoxGridSpace(i, j, k, cellBox))
+                        return false;
+
+                    if (IntersectionQuery::OverlapAxisAlignedBoxTri(cellBox, v0, v1, v2))
+                    {
+                        ClosestTriUniformGrid::CellKey cellKey;
+                        if (!ComputeCellKeyFromIndex(
+                            Nxyz, ClosestTriUniformGrid::ToIndex3(i, j, k), cellKey))
+                            return false;
+
+                        AddTriToBucket(*this, cellKey, triKey);
+                    }
+                }
+            }
+        }
+    }
+    tris.shrink_to_fit();
+
+    return true;
+}
+
+bool 
+ClosestTriUniformGrid::Builder::AddTriMesh(
+    const float* positions, uint32_t posCount, 
+    const uint32_t* indices, uint32_t idxCount,
+    uint32_t posStride)
+{
+    CTRIGRID_ASSERT(vertices.empty());
+    CTRIGRID_ASSERT(tris.empty());
+
+    // vertices and indices arrays need to be multiples of 3
+    if (posCount % 3u != 0 || idxCount % 3u != 0 || posStride < 3u)
+        return false;
+    
+    // gather vertices first
+    vertices.reserve(posCount / 3u);
+    for (size_t i = 0u; i < posCount; i += posStride)
+    {
+        Vector3 v(positions[i], positions[i+1], positions[i+2]);
+
+        // check if point is in grid bounding box
+        if (!gridBox.Contains(v))
+            return false;
+
+        // transform vertex to grid space
+        v.Sub(gridBox.min);
+
+        // add to storage
+        vertices.push_back(v);
+    }
+    vertices.shrink_to_fit();
+
+    // add tris
+    tris.reserve(idxCount / 3u);
+    for (size_t triv = 0u; triv < idxCount; triv += 3u)
     {
         // add new tri info
         const uint32_t idx0 = indices[triv];

@@ -96,6 +96,9 @@ public:
         // both expected to have sizes that are multiples of 3
         // NOTE: adding multiple meshes is not supported at the moment!
         bool AddTriMesh(const std::vector<float>& positions, const std::vector<uint32_t>& indices);
+        bool AddTriMesh(const float* positions, uint32_t posCount, 
+                        const uint32_t* indices, uint32_t idxCount,
+                        uint32_t posStride = 3u);
         
         // finalize construction and store the result to the input grid
         // mesh data ownership is passed to the grid, rest of builder data is cleared

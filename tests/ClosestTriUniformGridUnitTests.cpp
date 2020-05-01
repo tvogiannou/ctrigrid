@@ -264,7 +264,6 @@ TEST(ClosestTriUniformGridUnitTests, UniformGridTriBuilder)
 {
     using namespace ctrigrid;
 
-    ClosestTriUniformGrid::Builder builder;
 
     // grid params
     const ClosestTriUniformGrid::CellKey Nx = 5u;
@@ -289,6 +288,7 @@ TEST(ClosestTriUniformGridUnitTests, UniformGridTriBuilder)
 
     // create grid and add tris
     {
+        ClosestTriUniformGrid::Builder builder;
         ClosestTriUniformGrid::Builder::InitInfo info = { Nx, Ny, Nz, origin, cellWidth };
         bool r = builder.Init(info);
         EXPECT_TRUE(r);
@@ -300,50 +300,108 @@ TEST(ClosestTriUniformGridUnitTests, UniformGridTriBuilder)
         EXPECT_TRUE(r);
 
         // should not finalize for this test!
+
+        // check grid
+        {
+            const ClosestTriUniformGrid::CellIndex3 Nxyz = builder.Nxyz;
+
+            auto f = std::bind(
+                &ClosestTriUniformGrid::Builder::GetOverlappingTrisOnCell, 
+                builder, 
+                std::placeholders::_1, 
+                std::placeholders::_2);
+
+            s_CheckStoredTrisInCell(Nxyz, 0u, 0u, 2u, 0u, f);
+            s_CheckStoredTrisInCell(Nxyz, 0u, 1u, 2u, 0u, f);
+            s_CheckStoredTrisInCell(Nxyz, 0u, 2u, 2u, 1u, f);
+            s_CheckStoredTrisInCell(Nxyz, 0u, 3u, 2u, 0u, f);
+            s_CheckStoredTrisInCell(Nxyz, 0u, 4u, 2u, 0u, f);
+
+            s_CheckStoredTrisInCell(Nxyz, 1u, 0u, 2u, 0u, f);
+            s_CheckStoredTrisInCell(Nxyz, 1u, 1u, 2u, 2u, f);
+            s_CheckStoredTrisInCell(Nxyz, 1u, 2u, 2u, 2u, f);
+            s_CheckStoredTrisInCell(Nxyz, 1u, 3u, 2u, 1u, f);
+            s_CheckStoredTrisInCell(Nxyz, 1u, 4u, 2u, 0u, f);
+
+            s_CheckStoredTrisInCell(Nxyz, 2u, 0u, 2u, 0u, f);
+            s_CheckStoredTrisInCell(Nxyz, 2u, 1u, 2u, 1u, f);
+            s_CheckStoredTrisInCell(Nxyz, 2u, 2u, 2u, 2u, f);
+            s_CheckStoredTrisInCell(Nxyz, 2u, 3u, 2u, 2u, f);
+            s_CheckStoredTrisInCell(Nxyz, 2u, 4u, 2u, 0u, f);
+
+            s_CheckStoredTrisInCell(Nxyz, 3u, 0u, 2u, 0u, f);
+            s_CheckStoredTrisInCell(Nxyz, 3u, 1u, 2u, 0u, f);
+            s_CheckStoredTrisInCell(Nxyz, 3u, 2u, 2u, 0u, f);
+            s_CheckStoredTrisInCell(Nxyz, 3u, 3u, 2u, 0u, f);
+            s_CheckStoredTrisInCell(Nxyz, 3u, 4u, 2u, 0u, f);
+
+            s_CheckStoredTrisInCell(Nxyz, 4u, 0u, 2u, 0u, f);
+            s_CheckStoredTrisInCell(Nxyz, 4u, 1u, 2u, 0u, f);
+            s_CheckStoredTrisInCell(Nxyz, 4u, 2u, 2u, 0u, f);
+            s_CheckStoredTrisInCell(Nxyz, 4u, 3u, 2u, 0u, f);
+            s_CheckStoredTrisInCell(Nxyz, 4u, 4u, 2u, 0u, f);
+        }
     }
 
-    // check grid
+    // test raw array API
     {
-        const ClosestTriUniformGrid::CellIndex3 Nxyz = builder.Nxyz;
+        ClosestTriUniformGrid::Builder builder;
+        ClosestTriUniformGrid::Builder::InitInfo info = { Nx, Ny, Nz, origin, cellWidth };
+        bool r = builder.Init(info);
+        EXPECT_TRUE(r);
 
-        auto f = std::bind(
-            &ClosestTriUniformGrid::Builder::GetOverlappingTrisOnCell, 
-            builder, 
-            std::placeholders::_1, 
-            std::placeholders::_2);
+        r = builder.BeginGridSetup();
+        EXPECT_TRUE(r);
 
-        s_CheckStoredTrisInCell(Nxyz, 0u, 0u, 2u, 0u, f);
-        s_CheckStoredTrisInCell(Nxyz, 0u, 1u, 2u, 0u, f);
-        s_CheckStoredTrisInCell(Nxyz, 0u, 2u, 2u, 1u, f);
-        s_CheckStoredTrisInCell(Nxyz, 0u, 3u, 2u, 0u, f);
-        s_CheckStoredTrisInCell(Nxyz, 0u, 4u, 2u, 0u, f);
+        r = builder.AddTriMesh( vertices.data(), vertices.size(), 
+                                indices.data(), indices.size());
+        EXPECT_TRUE(r);
 
-        s_CheckStoredTrisInCell(Nxyz, 1u, 0u, 2u, 0u, f);
-        s_CheckStoredTrisInCell(Nxyz, 1u, 1u, 2u, 2u, f);
-        s_CheckStoredTrisInCell(Nxyz, 1u, 2u, 2u, 2u, f);
-        s_CheckStoredTrisInCell(Nxyz, 1u, 3u, 2u, 1u, f);
-        s_CheckStoredTrisInCell(Nxyz, 1u, 4u, 2u, 0u, f);
+        // should not finalize for this test!
+        
+        // check grid
+        {
+            const ClosestTriUniformGrid::CellIndex3 Nxyz = builder.Nxyz;
 
-        s_CheckStoredTrisInCell(Nxyz, 2u, 0u, 2u, 0u, f);
-        s_CheckStoredTrisInCell(Nxyz, 2u, 1u, 2u, 1u, f);
-        s_CheckStoredTrisInCell(Nxyz, 2u, 2u, 2u, 2u, f);
-        s_CheckStoredTrisInCell(Nxyz, 2u, 3u, 2u, 2u, f);
-        s_CheckStoredTrisInCell(Nxyz, 2u, 4u, 2u, 0u, f);
+            auto f = std::bind(
+                &ClosestTriUniformGrid::Builder::GetOverlappingTrisOnCell, 
+                builder, 
+                std::placeholders::_1, 
+                std::placeholders::_2);
 
-        s_CheckStoredTrisInCell(Nxyz, 3u, 0u, 2u, 0u, f);
-        s_CheckStoredTrisInCell(Nxyz, 3u, 1u, 2u, 0u, f);
-        s_CheckStoredTrisInCell(Nxyz, 3u, 2u, 2u, 0u, f);
-        s_CheckStoredTrisInCell(Nxyz, 3u, 3u, 2u, 0u, f);
-        s_CheckStoredTrisInCell(Nxyz, 3u, 4u, 2u, 0u, f);
+            s_CheckStoredTrisInCell(Nxyz, 0u, 0u, 2u, 0u, f);
+            s_CheckStoredTrisInCell(Nxyz, 0u, 1u, 2u, 0u, f);
+            s_CheckStoredTrisInCell(Nxyz, 0u, 2u, 2u, 1u, f);
+            s_CheckStoredTrisInCell(Nxyz, 0u, 3u, 2u, 0u, f);
+            s_CheckStoredTrisInCell(Nxyz, 0u, 4u, 2u, 0u, f);
 
-        s_CheckStoredTrisInCell(Nxyz, 4u, 0u, 2u, 0u, f);
-        s_CheckStoredTrisInCell(Nxyz, 4u, 1u, 2u, 0u, f);
-        s_CheckStoredTrisInCell(Nxyz, 4u, 2u, 2u, 0u, f);
-        s_CheckStoredTrisInCell(Nxyz, 4u, 3u, 2u, 0u, f);
-        s_CheckStoredTrisInCell(Nxyz, 4u, 4u, 2u, 0u, f);
+            s_CheckStoredTrisInCell(Nxyz, 1u, 0u, 2u, 0u, f);
+            s_CheckStoredTrisInCell(Nxyz, 1u, 1u, 2u, 2u, f);
+            s_CheckStoredTrisInCell(Nxyz, 1u, 2u, 2u, 2u, f);
+            s_CheckStoredTrisInCell(Nxyz, 1u, 3u, 2u, 1u, f);
+            s_CheckStoredTrisInCell(Nxyz, 1u, 4u, 2u, 0u, f);
+
+            s_CheckStoredTrisInCell(Nxyz, 2u, 0u, 2u, 0u, f);
+            s_CheckStoredTrisInCell(Nxyz, 2u, 1u, 2u, 1u, f);
+            s_CheckStoredTrisInCell(Nxyz, 2u, 2u, 2u, 2u, f);
+            s_CheckStoredTrisInCell(Nxyz, 2u, 3u, 2u, 2u, f);
+            s_CheckStoredTrisInCell(Nxyz, 2u, 4u, 2u, 0u, f);
+
+            s_CheckStoredTrisInCell(Nxyz, 3u, 0u, 2u, 0u, f);
+            s_CheckStoredTrisInCell(Nxyz, 3u, 1u, 2u, 0u, f);
+            s_CheckStoredTrisInCell(Nxyz, 3u, 2u, 2u, 0u, f);
+            s_CheckStoredTrisInCell(Nxyz, 3u, 3u, 2u, 0u, f);
+            s_CheckStoredTrisInCell(Nxyz, 3u, 4u, 2u, 0u, f);
+
+            s_CheckStoredTrisInCell(Nxyz, 4u, 0u, 2u, 0u, f);
+            s_CheckStoredTrisInCell(Nxyz, 4u, 1u, 2u, 0u, f);
+            s_CheckStoredTrisInCell(Nxyz, 4u, 2u, 2u, 0u, f);
+            s_CheckStoredTrisInCell(Nxyz, 4u, 3u, 2u, 0u, f);
+            s_CheckStoredTrisInCell(Nxyz, 4u, 4u, 2u, 0u, f);
+        }
     }
-
-	// TODO: test failure cases
+    
+    // TODO: test failure cases
 }
 
 TEST(ClosestTriUniformGridUnitTests, UniformGridTriBuilderFinalize)
