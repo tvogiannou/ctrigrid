@@ -11,7 +11,8 @@
 #include "tiny_obj_loader.h"
 
 
-pybind11::array_t<float> CTRIGRID_ComputeVertexNormals(
+pybind11::array_t<float> 
+CTRIGRID_ComputeVertexNormals(
     pybind11::array_t<float, pybind11::array::c_style | pybind11::array::forcecast> vertices,
     pybind11::array_t<uint32_t> indices)
 {
@@ -88,7 +89,8 @@ pybind11::array_t<float> CTRIGRID_ComputeVertexNormals(
     return result;
 }
 
-pybind11::array_t<float> CTRIGRID_ComputeTriNormals(
+pybind11::array_t<float> 
+CTRIGRID_ComputeTriNormals(
     pybind11::array_t<float, pybind11::array::c_style | pybind11::array::forcecast> vertices,
     pybind11::array_t<uint32_t> indices)
 {
@@ -162,7 +164,8 @@ struct equal_to_fn
     }
 };
 
-pybind11::array_t<uint32_t> CTRIGRID_GetUniqueEdges(pybind11::array_t<uint32_t> indices)
+pybind11::array_t<uint32_t> 
+CTRIGRID_GetUniqueEdges(pybind11::array_t<uint32_t> indices)
 {
     pybind11::buffer_info indexBufferInfo = indices.request();
 
@@ -238,47 +241,15 @@ CTRIGRID_LoadObjFile(const std::string& filename)
             //const uint32_t vertexCount = (uint32_t)(attrib.vertices.size() / 3);
             while (vertexIndex < attrib.vertices.size())
             {
-//                 CTRIGRID_ASSERT(!hasUVs || texIndex < attrib.texcoords.size());
-//                 CTRIGRID_ASSERT(!hasNormals || vertexIndex < attrib.normals.size());  // should use proper index in case normals do not match verts
-
                 // load vertex data
                 const tinyobj::real_t vx = attrib.vertices[vertexIndex + 0];
                 const tinyobj::real_t vy = attrib.vertices[vertexIndex + 1];
                 const tinyobj::real_t vz = attrib.vertices[vertexIndex + 2];
-//                 const tinyobj::real_t nx = hasNormals ? attrib.normals[vertexIndex + 0] : 0.f;
-//                 const tinyobj::real_t ny = hasNormals ? attrib.normals[vertexIndex + 1] : 0.f;
-//                 const tinyobj::real_t nz = hasNormals ? attrib.normals[vertexIndex + 2] : 0.f;
-//                 const tinyobj::real_t tx = hasUVs ? attrib.texcoords[texIndex + 0] : 0.f;
-//                 const tinyobj::real_t ty = hasUVs ? attrib.texcoords[texIndex + 1] : 0.f;
-                // Optional: vertex colors
-                // tinyobj::real_t red = attrib.colors[3*idx.vertex_index+0];
-                // tinyobj::real_t green = attrib.colors[3*idx.vertex_index+1];
-                // tinyobj::real_t blue = attrib.colors[3*idx.vertex_index+2];
 
                 // write to output buffer
                 vertexData.push_back((float)vx);
                 vertexData.push_back((float)vy);
                 vertexData.push_back((float)vz);
-//                 vertexData.push_back((float)nx);
-//                 vertexData.push_back((float)ny);
-//                 vertexData.push_back((float)nz);
-//                 vertexData.push_back((float)tx);
-//                 vertexData.push_back((float)ty);
-
-//                 if (hasMaterial)
-//                 {
-//                     vertexData.push_back(materials[0].diffuse[0]);
-//                     vertexData.push_back(materials[0].diffuse[1]);
-//                     vertexData.push_back(materials[0].diffuse[2]);
-//                 }
-//                 else
-//                 {
-//                     // default color
-//                     float r = 1.f, g = 0.f, b = 0.f;
-//                     vertexData.push_back(r);
-//                     vertexData.push_back(g);
-//                     vertexData.push_back(b);
-//                 }
 
                 // get next vertex
                 vertexIndex += 3;

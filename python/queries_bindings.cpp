@@ -23,7 +23,8 @@ void CTRIGRID_UniformGrid_wrapper::Begin() {  }
 void CTRIGRID_UniformGrid_wrapper::Finalize() {  }
 
 
-void CTRIGRID_UniformGrid_wrapper::AddTris(
+void 
+CTRIGRID_UniformGrid_wrapper::AddTris(
     pybind11::array_t<float, pybind11::array::c_style | pybind11::array::forcecast> vertices,
     pybind11::array_t<uint32_t> indices)
 {
@@ -121,7 +122,8 @@ CTRIGRID_UniformGrid_wrapper::FindAllClosestPointsOnTris(pybind11::array_t<float
 }
 
 // wrapper to ClosestDistanceQuery::ClosestPointOnTri
-CTRIGRID_Vector3_wrapper CTRIGRID_ComputeClosestPointOnTri(
+CTRIGRID_Vector3_wrapper 
+CTRIGRID_ComputeClosestPointOnTri(
     const CTRIGRID_Vector3_wrapper& v0,
     const CTRIGRID_Vector3_wrapper& v1,
     const CTRIGRID_Vector3_wrapper& v2,

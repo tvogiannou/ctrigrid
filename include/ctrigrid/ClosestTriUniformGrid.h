@@ -117,7 +117,7 @@ public:
     CellIndex GetNumberCellsZAxis() const { return m_Nz; }
     float GetCellWidth() const { return m_cellWidth; }
     const AxisAlignedBoundingBox& GetGridAABoxWorldSpace() const { return m_gridBBoxWorldSpace; }
-    const TriInfoArrayType& GetTriangles() const { return m_tris; }
+    const TriInfoArrayType& GetTriangleInfo() const { return m_tris; }
     const TriVertexArrayType& GetVertices() const { return m_vertices; }
 
 
