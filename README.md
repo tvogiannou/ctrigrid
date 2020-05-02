@@ -135,7 +135,7 @@ cmake -DCTRIGRID_GENERATE_PYTHON_BINDINGS=1 ..
 ```
 > It is reccomended to avoid building tests alongside the python bindings since both cmake scripts will try to find the installed python libs and may result in some version conflicts. 
 
-The built python module (as .so file) can then be imported in python source.
+The built python module (as .so/.pyd file) can then be imported in python source.
 ```python
 # example code
 

@@ -15,6 +15,7 @@
 
 struct CTRIGRID_Vector3_wrapper
 {
+    CTRIGRID_Vector3_wrapper() = default;
     CTRIGRID_Vector3_wrapper(float _x, float _y, float _z) : x(_x), y(_y), z(_z) {}
 
     ctrigrid::Vector3 ToVector3() const { return ctrigrid::Vector3(x, y, z); }
@@ -43,8 +44,11 @@ struct CTRIGRID_UniformGrid_wrapper
     std::tuple<pybind11::array_t<float>, pybind11::array_t<uint32_t>> 
         FindAllClosestPointsOnTris(pybind11::array_t<float> points, bool forceInGrid = false) const;
 
-    ctrigrid::ClosestTriUniformGrid::Builder::InitInfo info;
-    ctrigrid::ClosestTriUniformGrid grid;
+    // internal
+    ctrigrid::ClosestTriUniformGrid::CellIndex3 _Nxyz;
+    CTRIGRID_Vector3_wrapper                    _origin;
+    float                                       _cellWidth;
+    ctrigrid::ClosestTriUniformGrid             _grid;
 
     // non-copyable
     CTRIGRID_UniformGrid_wrapper(const CTRIGRID_UniformGrid_wrapper&) = delete;

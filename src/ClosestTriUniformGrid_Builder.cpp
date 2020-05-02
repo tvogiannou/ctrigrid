@@ -398,15 +398,15 @@ ClosestTriUniformGrid::Builder::FinalizeGridSetup(ClosestTriUniformGrid& grid)
                     //cellTris.shrink_to_fit();
 
                     // check if we need to expand the bit stream
-                    const size_t estimatedSize = writer.GetCurrentWritePos() + 
-                        cellTris.size() * grid.m_indexBitWidth +    // the new bits to be added
-                        sizeof(uint64_t);                           // a double word for padding
+                    const size_t estimatedSize = (size_t)writer.GetCurrentWritePos() +
+                        cellTris.size() * (size_t)grid.m_indexBitWidth +    // the new bits to be added
+                        8u * sizeof(uint64_t);                           // a double word for padding
                     if (estimatedSize >= grid.m_indexBitStream.GetSizeInBits())
                     {
                         // TODO: find a better policy for the expansion
                         const size_t newSize = std::max(
                             2 * grid.m_indexBitStream.GetSizeInBytes(),
-                            estimatedSize + sizeof(uint64_t));
+                            estimatedSize + 8u * sizeof(uint64_t));
                         grid.m_indexBitStream.Resize(newSize);
                     }
 
@@ -430,7 +430,14 @@ ClosestTriUniformGrid::Builder::FinalizeGridSetup(ClosestTriUniformGrid& grid)
 
     // copy params
     grid.m_cellWidth = cellWidth;
-    grid.m_gridBBoxWorldSpace = gridBox;
+    {
+        grid.m_boxMin[0] = gridBox.min.x;
+        grid.m_boxMin[1] = gridBox.min.y;
+        grid.m_boxMin[2] = gridBox.min.z;
+        grid.m_boxMax[0] = gridBox.max.x;
+        grid.m_boxMax[1] = gridBox.max.y;
+        grid.m_boxMax[2] = gridBox.max.z;
+    }
     grid.m_vertices = std::move(vertices);
     grid.m_tris = std::move(tris);
 
@@ -450,9 +457,9 @@ ClosestTriUniformGrid::Builder::AddTriMesh(
 
 ClosestTriUniformGrid::Builder::BuilderStatus 
 ClosestTriUniformGrid::Builder::AddTriMesh(
-    const float* positions, uint32_t posCount, 
-    const uint32_t* indices, uint32_t idxCount,
-    uint32_t posStride)
+    const float* positions, size_t posCount, 
+    const uint32_t* indices, size_t idxCount,
+    size_t posStride)
 {
     if (!vertices.empty() || !tris.empty())
         return BuilderStatus::eBUILDER_STATUS_NONEMPTY_MESH;

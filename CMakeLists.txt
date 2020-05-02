@@ -84,7 +84,7 @@ if (CTRIGRID_GENERATE_PYTHON_BINDINGS)
 
     # create pybind11 module
     set(PYBIND11_CPP_STANDARD -std=c++11)
-    pybind11_add_module(ctrigrid_bindings SHARED 
+    pybind11_add_module(ctrigrid_bindings 
                         ${CMAKE_CURRENT_LIST_DIR}/python/module.cpp
                         ${CMAKE_CURRENT_LIST_DIR}/python/queries_bindings.cpp
                         ${CMAKE_CURRENT_LIST_DIR}/python/mesh_bindings.cpp

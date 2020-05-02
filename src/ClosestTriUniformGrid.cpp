@@ -19,9 +19,10 @@ bool
 ClosestTriUniformGrid::FindClosestPointOnTris(
     const Vector3& p, Vector3& closestPoint, TriKey& triKey, bool forceInGrid) const
 {
+    AxisAlignedBoundingBox gridBox = GetGridAABoxWorldSpace();
     CellKey cellKey;
     if (!ComputeCellKeyFromPoint(
-            ToIndex3(m_Nx, m_Ny, m_Nz), m_cellWidth, m_gridBBoxWorldSpace, p, cellKey))
+            ToIndex3(m_Nx, m_Ny, m_Nz), m_cellWidth, gridBox, p, cellKey))
     {
         if (forceInGrid)    // force the result to be inside the grid
             return false;
@@ -29,17 +30,17 @@ ClosestTriUniformGrid::FindClosestPointOnTris(
         // if the point is outside the grid, just fall back to finding the closest cell
         // NOTE: this is an approximation and may not always give correct results
         Vector3 closestCellPoint;
-        ClosestDistanceQuery::ClosestPointOnAxisAlignedBox(p, m_gridBBoxWorldSpace, closestCellPoint);
+        ClosestDistanceQuery::ClosestPointOnAxisAlignedBox(p, gridBox, closestCellPoint);
 
         // make sure closest point is inside grid by "nudging" it towards the grid center
-        const Vector3 c = m_gridBBoxWorldSpace.ComputeCenter();
+        const Vector3 c = gridBox.ComputeCenter();
         Vector3 d = c;
         d.Sub(closestCellPoint);
         d.Normalize();
         closestCellPoint.MulAdd(m_cellWidth * .5f, d);
 
         if (!ComputeCellKeyFromPoint(
-            ToIndex3(m_Nx, m_Ny, m_Nz), m_cellWidth, m_gridBBoxWorldSpace, closestCellPoint, cellKey))
+            ToIndex3(m_Nx, m_Ny, m_Nz), m_cellWidth, gridBox, closestCellPoint, cellKey))
         {
             // Should never get here!
             CTRIGRID_ASSERT(false);
@@ -48,7 +49,7 @@ ClosestTriUniformGrid::FindClosestPointOnTris(
     }
 
     Vector3 localP = p;
-    localP.Sub(m_gridBBoxWorldSpace.min);
+    localP.Sub(gridBox.min);
 
     CTRIGRID_ASSERT(cellKey < m_indexCells.size());
     const BitStreamBuffer::BufferIndex startPos = m_indexCells[cellKey];
@@ -234,7 +235,7 @@ ClosestTriUniformGrid::FindClosestPointOnTris(
 #endif
 
     // transform back to world space
-    closestPoint.Add(m_gridBBoxWorldSpace.min);
+    closestPoint.Add(gridBox.min);
 
     return true;
 }
@@ -288,9 +289,10 @@ ClosestTriUniformGrid::GetTriVerticesWorldSpace(
     v1 = m_vertices[info.idx1];
     v2 = m_vertices[info.idx2];
 
-    v0.Add(m_gridBBoxWorldSpace.min);
-    v1.Add(m_gridBBoxWorldSpace.min);
-    v2.Add(m_gridBBoxWorldSpace.min);
+    AxisAlignedBoundingBox gridBBoxWorldSpace = GetGridAABoxWorldSpace();
+    v0.Add(gridBBoxWorldSpace.min);
+    v1.Add(gridBBoxWorldSpace.min);
+    v2.Add(gridBBoxWorldSpace.min);
 
     return true;
 }
@@ -302,7 +304,6 @@ ClosestTriUniformGrid::Clear()
     m_Ny = 0u;
     m_Nz = 0u;
     m_cellWidth = -1;
-    m_gridBBoxWorldSpace.Reset();
 
     m_vertices.clear();
     m_tris.clear();

@@ -109,9 +109,9 @@ public:
         // both expected to have sizes that are multiples of 3
         // NOTE: adding multiple meshes is not supported at the moment!
         BuilderStatus AddTriMesh(const std::vector<float>& positions, const std::vector<uint32_t>& indices);
-        BuilderStatus AddTriMesh(const float* positions, uint32_t posCount, 
-                        const uint32_t* indices, uint32_t idxCount,
-                        uint32_t posStride = 3u);
+        BuilderStatus AddTriMesh(const float* positions, size_t posCount,
+                        const uint32_t* indices, size_t idxCount,
+                        size_t posStride = 3u);
         
         // finalize construction and store the result to the input grid
         // mesh data ownership is passed to the grid, rest of builder data is cleared
@@ -132,9 +132,15 @@ public:
     CellIndex GetNumberCellsYAxis() const { return m_Ny; }
     CellIndex GetNumberCellsZAxis() const { return m_Nz; }
     float GetCellWidth() const { return m_cellWidth; }
-    const AxisAlignedBoundingBox& GetGridAABoxWorldSpace() const { return m_gridBBoxWorldSpace; }
     const TriInfoArrayType& GetTriangleInfo() const { return m_tris; }
     const TriVertexArrayType& GetVertices() const { return m_vertices; }
+    AxisAlignedBoundingBox GetGridAABoxWorldSpace() const 
+    { 
+        AxisAlignedBoundingBox bbox;
+        bbox.min = Vector3(m_boxMin[0], m_boxMin[1], m_boxMin[2]);
+        bbox.max = Vector3(m_boxMax[0], m_boxMax[1], m_boxMax[2]);
+        return bbox;
+    }
 
 
     // queries
@@ -171,11 +177,12 @@ private:
     TriInfoArrayType        m_tris;     // array of tris 
 
     // size & position data
-    CellIndex   m_Nx = 0u;              // number of cells along X axis
-    CellIndex   m_Ny = 0u;              // number of cells along Y axis
-    CellIndex   m_Nz = 0u;              // number of cells along Z axis
-    float       m_cellWidth = -1.f;     // width of each cell along all dimensions
-    AxisAlignedBoundingBox  m_gridBBoxWorldSpace;   // the bounding box of the entire grid, i.e. volume of all the cells
+    CellIndex   m_Nx = 0u;          // number of cells along X axis
+    CellIndex   m_Ny = 0u;          // number of cells along Y axis
+    CellIndex   m_Nz = 0u;          // number of cells along Z axis
+    float       m_cellWidth = -1.f; // width of each cell along all dimensions
+    float       m_boxMin[3];        // grid aabbox min, stored in array to work around alignment requirements
+    float       m_boxMax[3];        // grid aabbox max, stored in array to work around alignment requirements
 
     // compressed tri indices stored in the grid cells for queries
     uint8_t                             m_indexBitWidth;

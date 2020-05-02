@@ -49,11 +49,9 @@ void s_CheckBuilderStatus(BuilderStatus status)
 CTRIGRID_UniformGrid_wrapper::CTRIGRID_UniformGrid_wrapper(uint32_t Nx, uint32_t Ny, uint32_t Nz, float cellWidth,
     const CTRIGRID_Vector3_wrapper& origin)
 {
-    info.Nx = Nx;
-    info.Ny = Ny;
-    info.Nz = Nz;
-    info.cellWidth = cellWidth;
-    info.origin = origin.ToVector3();
+    _Nxyz = ctrigrid::ClosestTriUniformGrid::ToIndex3(Nx, Ny, Nz);
+    _cellWidth = cellWidth;
+    _origin = origin;
 }
 
 void CTRIGRID_UniformGrid_wrapper::Begin() {  }
@@ -67,6 +65,9 @@ CTRIGRID_UniformGrid_wrapper::AddTris(
 {
     ctrigrid::ClosestTriUniformGrid::Builder builder;
 
+    uint32_t Nx, Ny, Nz;
+    std::tie(Nx, Ny, Nz) = _Nxyz;
+    ctrigrid::ClosestTriUniformGrid::Builder::InitInfo info = { Nx, Ny, Nz, _origin.ToVector3(), _cellWidth };
     BuilderStatus s = builder.Init(info);
     s_CheckBuilderStatus(s);
     
@@ -95,7 +96,7 @@ CTRIGRID_UniformGrid_wrapper::AddTris(
     s = builder.AddTriMesh(v, i);
     s_CheckBuilderStatus(s);
 
-    s = builder.FinalizeGridSetup(grid);
+    s = builder.FinalizeGridSetup(_grid);
     s_CheckBuilderStatus(s);
 }
 
@@ -106,7 +107,7 @@ CTRIGRID_UniformGrid_wrapper::FindClosestPointOnTris(const CTRIGRID_Vector3_wrap
 
     ctrigrid::Vector3 _closestPoint;
     ctrigrid::ClosestTriUniformGrid::TriKey triKey;
-    if(!grid.FindClosestPointOnTris(_p, _closestPoint, triKey))
+    if(!_grid.FindClosestPointOnTris(_p, _closestPoint, triKey))
         throw std::runtime_error("Grid FindClosestPointOnTris failed: internal error");
 
     CTRIGRID_Vector3_wrapper closestPoint(0.f, 0.f, 0.f);
@@ -148,7 +149,7 @@ CTRIGRID_UniformGrid_wrapper::FindAllClosestPointsOnTris(pybind11::array_t<float
             ctrigrid::Vector3 _closestPoint;
             ctrigrid::ClosestTriUniformGrid::TriKey triKey;
             //bool forceInGrid = false;
-            if (!grid.FindClosestPointOnTris(p, _closestPoint, triKey, forceInGrid))
+            if (!_grid.FindClosestPointOnTris(p, _closestPoint, triKey, forceInGrid))
                 throw std::runtime_error("Grid FindClosestPointOnTris failed: internal error");
 
             closestTris[i / 3u] = triKey;
