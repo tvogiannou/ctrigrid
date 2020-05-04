@@ -44,6 +44,8 @@ struct CTRIGRID_UniformGrid_wrapper
     std::tuple<pybind11::array_t<float>, pybind11::array_t<uint32_t>> 
         FindAllClosestPointsOnTris(pybind11::array_t<float> points, bool forceInGrid = false) const;
 
+    uint32_t EstimateNativeMemory() const;
+
     // internal
     ctrigrid::ClosestTriUniformGrid::CellIndex3 _Nxyz;
     CTRIGRID_Vector3_wrapper                    _origin;

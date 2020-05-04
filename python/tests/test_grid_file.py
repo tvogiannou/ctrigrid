@@ -91,6 +91,8 @@ def script_main(filename, N, num_test_points, verbose, padding_perc, render):
     grid.add_tri_mesh(mesh_vertices, mesh_indices)
     end = time.perf_counter()
     print("Grid construction finished in {} msecs".format((end - start) * 1000))
+    if verbose:
+        print("Grid estimated size in memory: {} bytes".format(grid.mem_footprint()))
 
     # query closest point
     c = gen_random_points(num_test_points, origin, [Nx * width, Ny * width, Nz * width])

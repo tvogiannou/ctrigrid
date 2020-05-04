@@ -162,6 +162,16 @@ CTRIGRID_UniformGrid_wrapper::FindAllClosestPointsOnTris(pybind11::array_t<float
     return std::make_tuple(closestPointsBuffer, closestTrisBuffer);
 }
 
+uint32_t
+CTRIGRID_UniformGrid_wrapper::EstimateNativeMemory() const
+{
+    ctrigrid::ClosestTriUniformGrid::MemoryStats stats = _grid.ComputeMemFootprint();
+    return  stats.cellIndicesAllocMem + 
+            stats.cellsAllocMem +
+            stats.trisAllocMem +
+            stats.verticesAllocMem;
+}
+
 // wrapper to ClosestDistanceQuery::ClosestPointOnTri
 CTRIGRID_Vector3_wrapper 
 CTRIGRID_ComputeClosestPointOnTri(
@@ -188,3 +198,4 @@ CTRIGRID_ComputeClosestPointOnTri(
 
     return closestPoint;
 }
+

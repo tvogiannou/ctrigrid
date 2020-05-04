@@ -23,15 +23,20 @@ PYBIND11_MODULE(ctrigrid_bindings, m)
         .def("closest_points", &CTRIGRID_UniformGrid_wrapper::FindAllClosestPointsOnTris,
             pybind11::arg("points"), pybind11::arg("force_in_grid") = false)
         .def("add_tri_mesh", &CTRIGRID_UniformGrid_wrapper::AddTris, 
-            pybind11::arg("vertices"), pybind11::arg("indices"));
+            pybind11::arg("vertices"), pybind11::arg("indices"))
+        .def("mem_footprint", &CTRIGRID_UniformGrid_wrapper::EstimateNativeMemory, 
+            "Estimated footprint of grid in memory (native heap only)");
 
-    m.def("closest_point_tri", &CTRIGRID_ComputeClosestPointOnTri, "Returns the vec3 that lies on triangle (v0, v1, v2) and closest to p",
+    m.def("closest_point_tri", &CTRIGRID_ComputeClosestPointOnTri, 
+        "Returns the vec3 that lies on triangle (v0, v1, v2) and closest to p",
         pybind11::arg("v0"), pybind11::arg("v1"), 
         pybind11::arg("v2"), pybind11::arg("p"));
 
-    m.def("compute_vertex_normals", &CTRIGRID_ComputeVertexNormals, "Computes the (normalized) per vertex normals of the input triangle mesh",
+    m.def("compute_vertex_normals", &CTRIGRID_ComputeVertexNormals, 
+        "Computes the (normalized) per vertex normals of the input triangle mesh",
         pybind11::arg("vertices"), pybind11::arg("indices"));
-    m.def("compute_tri_normals", &CTRIGRID_ComputeTriNormals, "Computes the (normalized) per tri normals of the input triangle mesh",
+    m.def("compute_tri_normals", &CTRIGRID_ComputeTriNormals, 
+        "Computes the (normalized) per tri normals of the input triangle mesh",
         pybind11::arg("vertices"), pybind11::arg("indices"));
 
     m.def("unique_edges", &CTRIGRID_GetUniqueEdges, "...", //pybind11::return_value_policy::copy,
