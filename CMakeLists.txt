@@ -26,9 +26,9 @@ if(MSVC)
 endif(MSVC)
 if(UNIX)
     if(CTRIGRID_GENERATE_PYTHON_BINDINGS)
-        set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -g -frtti -ldl -lpthread -fpic")   # rtti for pybind11
+        set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -frtti -ldl -lpthread -fpic")   # rtti for pybind11
     else()
-        set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -g -Wall -Werror -fno-rtti")
+        set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -Werror -fno-rtti")
     endif()
 
 endif(UNIX)
