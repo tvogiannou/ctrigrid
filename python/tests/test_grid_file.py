@@ -74,7 +74,7 @@ def gen_grid_test_params(vertices, N, padding_perc=0.1):
     return Nx, Ny, Nz, width, origin
 
 
-def script_main(filename, N, num_test_points, verbose, padding_perc, render):
+def script_main(filename, N, num_test_points, verbose, padding_perc, thread_count, render):
 
     mesh_vertices, mesh_indices = ctrigrid_bindings.load_obj(filename)
     if verbose:
@@ -98,7 +98,7 @@ def script_main(filename, N, num_test_points, verbose, padding_perc, render):
     c = gen_random_points(num_test_points, origin, [Nx * width, Ny * width, Nz * width])
 
     start = time.perf_counter()
-    cp, _ = grid.closest_points(c)   # note that with small number of points, multiple threads is not faster
+    cp, _ = grid.closest_points(c, threads=thread_count)   # note that with small number of points, multiple threads is not faster
     end = time.perf_counter()
     print("Grid query finished in {} msecs".format((end - start) * 1000))
 
@@ -154,6 +154,8 @@ if __name__ == "__main__":
     parser.add_argument('-n','--N', required=False, default=16, type=int, 
         help='Default dimension of grid (i.e. num of cells). Will be adjusted to \
             lower values for axis with smaller extends')
+    parser.add_argument('-c','--thread_count', required=False, default=1, type=int, 
+        help='Number of threads to use for the query')
     parser.add_argument('-p','--padding', required=False, default=0.1, type=float, 
         help='Percentage padding added to the axis aligned bounding box of the input mesh\
                 to generate the grid & the test points.')
@@ -164,5 +166,6 @@ if __name__ == "__main__":
     args = parser.parse_args()
 
     script_main(args.infile, N=args.N, num_test_points=args.testpoints, 
-        verbose=args.verbose, padding_perc=args.padding, render=args.render)
+                verbose=args.verbose, padding_perc=args.padding, 
+                thread_count=args.thread_count, render=args.render)
 

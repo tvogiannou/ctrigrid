@@ -11,6 +11,29 @@
 
 using BuilderStatus = ctrigrid::ClosestTriUniformGrid::Builder::BuilderStatus;
 
+
+void s_processPointsJob(const ctrigrid::ClosestTriUniformGrid& grid,
+                        const float* pts, size_t ptsCount,
+                        float* closestPts,
+                        uint32_t* closestTris)
+{
+    for (size_t i = 0; i < ptsCount; i += 3u)
+    {
+        const ctrigrid::Vector3 p(pts[i], pts[i + 1], pts[i + 2]);
+
+        ctrigrid::Vector3 _closestPoint;
+        ctrigrid::ClosestTriUniformGrid::TriKey triKey;
+        bool forceInGrid = false;
+        if (!grid.FindClosestPointOnTris(p, _closestPoint, triKey, forceInGrid))
+            throw std::runtime_error("Grid FindClosestPointOnTris failed: internal error");
+
+        closestTris[i / 3u] = triKey;
+        closestPts[i] = _closestPoint.x;
+        closestPts[i + 1] = _closestPoint.y;
+        closestPts[i + 2] = _closestPoint.z;
+    }
+}
+
 void s_CheckBuilderStatus(BuilderStatus status)
 {
     const std::string msg = "Grid builder failed: ";
@@ -124,8 +147,11 @@ CTRIGRID_UniformGrid_wrapper::FindClosestPointOnTris(const CTRIGRID_Vector3_wrap
 
 std::tuple<pybind11::array_t<float>, pybind11::array_t<uint32_t>>
 CTRIGRID_UniformGrid_wrapper::FindAllClosestPointsOnTris(pybind11::array_t<float> points,
-                                bool forceInGrid /*= false*/) const
+                                bool forceInGrid /*= false*/, uint32_t threads /*= 1u*/) const
 {
+    if (threads == 0u)
+        throw std::runtime_error("Threads should be greater than 0");
+    
     pybind11::buffer_info pointsBufferInfo = points.request();
     if (pointsBufferInfo.ndim != 1u)
         throw std::runtime_error("Number of dimensions must be one");
@@ -140,7 +166,48 @@ CTRIGRID_UniformGrid_wrapper::FindAllClosestPointsOnTris(pybind11::array_t<float
     float* closestPts = (float*)closestPointsBufferInfo.ptr;
     uint32_t* closestTris = (uint32_t*)closestTrisBufferInfo.ptr;
 
-    // check all points
+    // never use more than the available H/W threads
+    threads = std::min(threads, std::thread::hardware_concurrency());
+
+    if (threads > 1u)
+    {
+        //pybind11::print("Grid query running M/T using ", threads, " threads");
+
+        const size_t totalCount = (size_t)pointsBufferInfo.shape[0];
+        const size_t totalPoints = totalCount / 3u;
+        const size_t pointsPerThread = totalPoints / threads;
+        const size_t floatsPerThread = 3u * pointsPerThread;
+
+        // helper threads
+        std::vector<std::thread> helperThreads;
+
+        size_t curN = pointsPerThread;
+        if (pointsPerThread > 0u)
+        {
+            while (curN <= totalPoints)
+            {
+                // add thread to join later
+                helperThreads.push_back(
+                    std::thread(s_processPointsJob, std::cref(_grid), pts, floatsPerThread, closestPts, closestTris));
+
+                pts += floatsPerThread;
+                closestPts += floatsPerThread;
+                closestTris += pointsPerThread;
+
+                curN += pointsPerThread;
+            }
+        }
+
+        // do remainder points in this thread
+        const int64_t remainder = (int64_t)totalPoints - ((int64_t)curN - (int64_t)pointsPerThread);
+        if (remainder > 0)
+            s_processPointsJob(_grid, pts, (size_t)(remainder * 3), closestPts, closestTris);
+
+        // wait to join all threads
+        for (std::thread& t : helperThreads)
+            t.join();
+    }
+    else
     {
         for (size_t i = 0; i < (size_t)pointsBufferInfo.shape[0]; i += 3u)
         {

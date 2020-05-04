@@ -21,7 +21,7 @@ PYBIND11_MODULE(ctrigrid_bindings, m)
         .def("closest_point", &CTRIGRID_UniformGrid_wrapper::FindClosestPointOnTris,
             pybind11::arg("p"))
         .def("closest_points", &CTRIGRID_UniformGrid_wrapper::FindAllClosestPointsOnTris,
-            pybind11::arg("points"), pybind11::arg("force_in_grid") = false)
+            pybind11::arg("points"), pybind11::arg("force_in_grid") = false, pybind11::arg("threads") = 1u)
         .def("add_tri_mesh", &CTRIGRID_UniformGrid_wrapper::AddTris, 
             pybind11::arg("vertices"), pybind11::arg("indices"))
         .def("mem_footprint", &CTRIGRID_UniformGrid_wrapper::EstimateNativeMemory, 
